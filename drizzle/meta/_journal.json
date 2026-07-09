@@ -15,6 +15,13 @@
       "when": 1783527389738,
       "tag": "0001_abnormal_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783600787015,
+      "tag": "0002_wandering_magneto",
+      "breakpoints": true
     }
   ]
 }

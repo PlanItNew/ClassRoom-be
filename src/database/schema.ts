@@ -28,6 +28,7 @@ export const users = pgTable('users', {
     fullName: varchar('full_name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }).unique().notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    password: varchar('password', { length: 1024 }).notNull()
 });
 
 export const subjects = pgTable('subjects', {
@@ -48,7 +49,11 @@ export const classrooms = pgTable('classrooms', {
     purpose: text('purpose'),
     joinCode: varchar('join_code', { length: 15 }).unique(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+},
+    (table) => ({
+        teacherIdx: index('idx_classrooms_teacher').on(table.teacherId),
+    })
+);
 
 export const classroomStudents = pgTable(
     'classroom_students',
@@ -66,7 +71,7 @@ export const classroomStudents = pgTable(
     (table) => ({
         // Composite Primary Key for the junction table
         pk: primaryKey({ columns: [table.classroomId, table.studentId] }),
-        studentIdx: index('idx_classroom_students_student').on(table.studentId),
+        studentIdx: index('idx_classroom_students_student').on(table.studentId), // Due to composite indexing , the indexing will appiled by default at classRomm as it  scan from the left to right but studentid will casue full Scan , so expilicitly added indexing to studentid.
     })
 );
 
@@ -78,7 +83,11 @@ export const questionPapers = pgTable('question_papers', {
     title: varchar('title', { length: 255 }).notNull(),
     isPublished: boolean('is_published').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+},
+    (table) => ({
+        teacherIdx: index('idx_question_papers_teacher').on(table.teacherId),
+    })
+);
 
 export const questions = pgTable('questions', {
     id: uuid('id').defaultRandom().primaryKey(),
@@ -93,8 +102,9 @@ export const questions = pgTable('questions', {
     orderSequence: integer('order_sequence').default(1).notNull(),
 },
     (table) => ({
-        paperIdx: index('idx_questions_paper').on(table.questionPaperId),
+        paperIdx: index('idx_questions_paper').on(table.questionPaperId)
     })
+
 );
 
 export const exams = pgTable('exams', {
@@ -149,6 +159,7 @@ export const attemptAnswers = pgTable(
             .notNull()
             .references(() => questions.id, { onDelete: 'cascade' }),
         selectedOption: varchar('selected_option', { length: 255 }),
+        marksObtained: decimal('marks_obtained', { precision: 5, scale: 2 }),
         isCorrect: boolean('is_correct'),
         reason: text('option_reason'),
         answeredAt: timestamp('answered_at', { withTimezone: true }).defaultNow().notNull(),
@@ -156,6 +167,6 @@ export const attemptAnswers = pgTable(
     (table) => ({
         // Constraint: A student can only have one recorded answer per question in a specific attempt
         unqAnswer: unique().on(table.examAttemptId, table.questionId),
-        attemptIdx: index('idx_attempt_answers_attempt').on(table.examAttemptId),
+        questionId: index('idx_attempt_answers_question').on(table.questionId)
     })
 );
