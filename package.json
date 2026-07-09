@@ -13,10 +13,10 @@
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js",
+    "dev": "nodemon index.ts",
     "migration:generate": "drizzle-kit generate",
     "migration:migrate": "drizzle-kit migrate"
   },
@@ -32,7 +32,6 @@
     "@types/express": "^5.0.6",
     "@types/node": "^26.1.1",
     "drizzle-kit": "^0.31.10",
-    "tsx": "^4.23.0",
     "typescript": "^6.0.3"
   }
 }

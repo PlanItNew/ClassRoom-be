@@ -34,7 +34,7 @@ export const subjects = pgTable('subjects', {
     id: uuid('id').defaultRandom().primaryKey(),
     name: varchar('name', { length: 255 }).unique().notNull(),
     syllabusDescription: text('syllabus_description'),
-    syllabusFileUrl: varchar('syallabus_file_url', { length: 1024 })
+    syllabusFileUrl: varchar('syllabus_file_url', { length: 1024 })
 });
 
 export const classrooms = pgTable('classrooms', {
