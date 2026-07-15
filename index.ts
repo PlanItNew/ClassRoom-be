@@ -2,8 +2,11 @@ import express from "express";
 import { config } from "./src/config/index.js";
 import routes from "./src/routes/index.js";
 import { errorHandler } from "./src/middlewares/error.middleware.js";
+import helmet from "helmet";
 
 const app = express();
+
+app.use(helmet())
 
 app.use(express.json());
 
