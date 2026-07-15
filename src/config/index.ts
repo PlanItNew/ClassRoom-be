@@ -1,14 +1,10 @@
 import * as dotenv from 'dotenv';
 import { databaseConfig } from './database.config.js';
+import { appConfig } from './app.config.js';
 
 dotenv.config();
 
-export const config = {
-    port: process.env.PORT || 3000,
-    nodeEnv: process.env.NODE_ENV || 'development',
-    jwtSecret: process.env.JWT_SECRET || 'supersecretkey',
+export const applicationConfig = {
     database: databaseConfig,
+    app: appConfig,
 };
-
-export * from './database.config.js';
-export * from './database.key.js';
