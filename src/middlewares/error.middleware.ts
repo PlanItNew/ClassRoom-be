@@ -9,6 +9,6 @@ export const errorHandler = (
     console.error(`[Error Log]: ${err.message}`, err.stack);
     res.status(500).json({
         error: "Internal Server Error",
-        message: err.message,
+        message: "An unexpected error occured.",
     });
 };
