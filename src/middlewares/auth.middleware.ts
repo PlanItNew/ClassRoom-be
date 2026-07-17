@@ -1,8 +1,16 @@
-import type { Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../database/db.js";
 import { users, refreshTokens } from "../database/schema.js";
-import { verifyToken, decodeToken, generateAccessToken } from "../utils/auth.utils.js";
+import { verifyToken, decodeToken, generateToken, verifySensitiveData } from "../utils/auth.utils.js";
+import { applicationConfig } from "../config/index.js";
+import { getInMilliSec } from "../utils/common.utils.js";
+
+// Types 
+import { type StringValue } from "ms";
+import type { Response, NextFunction } from "express";
+import { JsonWebTokenError, TokenExpiredError, NotBeforeError } from "jsonwebtoken";
+
+
 
 // Types 
 import type { AuthenticatedRequest } from "../../constants/types.js";
@@ -17,7 +25,7 @@ export const authenticateToken = async (
         (req.headers["authorization"] && req.headers["authorization"].split(" ")[1]);
 
     if (!token) {
-        return res.status(401).json({ message: "Unauthorized " });
+        return res.status(401).json({ message: "Unauthorized." });
     }
 
     try {
@@ -30,7 +38,7 @@ export const authenticateToken = async (
 
         const user = userList[0];
         if (!user) {
-            return res.status(401).json({ message: "Invalid token user" });
+            return res.status(401).json({ message: "Invalid token user." });
         }
 
         req.user = {
@@ -40,66 +48,97 @@ export const authenticateToken = async (
             userName: user.userName,
         };
         return next();
-    } catch (err: any) {
-        // Token verification failed or expired. Attempt to refresh using refresh token from DB.
-        const decodedPayload = decodeToken(token);
-        if (!decodedPayload || !decodedPayload.userId) {
-            return res.status(401).json({ message: "Invalid access token" });
+    } catch (error: any) {
+
+        if (error instanceof JsonWebTokenError) {
+            return res.status(401).json({ message: "Invalid access token." })
         }
+        else if (error instanceof NotBeforeError) {
+            return res.status(401).json({ message: "Token is not active yet. Try again later." })
+        }
+        else if (error instanceof TokenExpiredError) {
+            // Token is expired. 
+            const accessTokenPayload = decodeToken(token);
+            if (!accessTokenPayload || !accessTokenPayload.userId) {
+                return res.status(401).json({ message: "Invalid token" })
+            }
+            try {
+                const refreshToken = req.cookies?.refresh_token;
+                if (!refreshToken) {
+                    return res.status(401).json({ message: "Please login again." })
+                }
 
-        try {
-            const userId = decodedPayload.userId;
-            const existingRefreshTokens = await db
-                .select()
-                .from(refreshTokens)
-                .where(eq(refreshTokens.userId, userId))
-                .limit(1);
+                verifyToken(refreshToken, "refresh");
 
-            const storedRefreshToken = existingRefreshTokens[0];
-            if (!storedRefreshToken) {
-                return res.status(401).json({ message: "Session expired, please login again" });
+                const refreshTokenPayload = decodeToken(refreshToken);
+                if (!refreshTokenPayload || !refreshTokenPayload.userId) {
+                    return res.status(401).json({ message: "Invalid token" })
+                }
+                if (accessTokenPayload.userId !== refreshTokenPayload.userId) {
+                    return res.status(401).json({ message: "Invalid token." })
+                }
+
+                const existingHashedRefreshTokens = await db
+                    .select()
+                    .from(refreshTokens)
+                    .where(eq(refreshTokens.userId, refreshTokenPayload.userId))
+                    .limit(1);
+
+                const storedRefreshToken = existingHashedRefreshTokens[0];
+                if (!storedRefreshToken) {
+                    return res.status(401).json({ message: "Session expired, please login again." });
+                }
+
+                // Verify the refresh token signature
+                const isMatchedRefreshToken = await verifySensitiveData(refreshToken, storedRefreshToken.token_hash);
+                if (!isMatchedRefreshToken) {
+                    return res.status(401).json({ message: "Invalid token" })
+                }
+
+                // Fetch user
+                const userList = await db
+                    .select()
+                    .from(users)
+                    .where(eq(users.id, refreshTokenPayload.userId))
+                    .limit(1);
+
+                const user = userList[0];
+                if (!user) {
+                    return res.status(401).json({ message: "Invalid user session." });
+                }
+
+                // Re-issue access token (30 mins)
+                const newAccessToken = generateToken(refreshTokenPayload.userId, "access");
+
+                res.cookie("jwt", newAccessToken, {
+                    httpOnly: true,
+                    secure: applicationConfig.app.environment === "production",
+                    maxAge: getInMilliSec(applicationConfig.app.jwt_access_expiry as StringValue),
+                    sameSite: "strict"
+                });
+
+                req.user = {
+                    id: user.id,
+                    role: user.role,
+                    email: user.email,
+                    userName: user.userName,
+                };
+
+                return next();
+            } catch (refreshError: any) {
+                if (refreshError instanceof JsonWebTokenError || refreshError instanceof NotBeforeError) {
+                    return res.status(401).json({ message: "Invalid session, please login again." });
+                }
+                if (refreshError instanceof TokenExpiredError) {
+                    await db.delete(refreshTokens).where(eq(refreshTokens.userId, accessTokenPayload.userId));
+                    return res.status(401).json({ message: "Session expired, please login again." });
+                }
+                return res.status(401).json({ message: "Internal Server Error." });
             }
 
-            if (new Date(storedRefreshToken.expiresAt) <= new Date()) {
-                // Refresh token expired in DB, clean it up
-                await db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
-                return res.status(401).json({ message: "Refresh token expired, please login again" });
-            }
-
-            // Verify the refresh token signature
-            verifyToken(storedRefreshToken.token, "refresh");
-
-            // Fetch user
-            const userList = await db
-                .select()
-                .from(users)
-                .where(eq(users.id, userId))
-                .limit(1);
-
-            const user = userList[0];
-            if (!user) {
-                return res.status(401).json({ message: "Invalid user session" });
-            }
-
-            // Re-issue access token (30 mins)
-            const newAccessToken = generateAccessToken(userId);
-
-            res.cookie("jwt", newAccessToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                maxAge: 30 * 60 * 1000,
-            });
-
-            req.user = {
-                id: user.id,
-                role: user.role,
-                email: user.email,
-                userName: user.userName,
-            };
-
-            return next();
-        } catch (refreshErr) {
-            return res.status(401).json({ message: "Invalid refresh session, please login again" });
+        }
+        else {
+            return res.status(401).json({ message: "Internal Server Error." });
         }
     }
 };
@@ -107,7 +146,7 @@ export const authenticateToken = async (
 export const requireRole = (role: "TEACHER" | "STUDENT") => {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         if (!req.user || req.user.role !== role) {
-            return res.status(403).json({ message: "Access denied: Unauthorized role" });
+            return res.status(403).json({ message: "Access denied: Unauthorized role." });
         }
         next();
     };

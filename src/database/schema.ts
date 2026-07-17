@@ -176,7 +176,7 @@ export const refreshTokens = pgTable('refresh_tokens', {
     userId: uuid('user_id')
         .primaryKey()
         .references(() => users.id, { onDelete: 'cascade' }),
-    token: text('token').notNull(),
+    token_hash: text('token').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });

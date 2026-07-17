@@ -3,7 +3,8 @@ import { eq, or } from "drizzle-orm";
 import { db } from "../database/db.js";
 import { users, refreshTokens } from "../database/schema.js";
 import {
-    hashPassword,
+    hashSensitiveData,
+    verifySensitiveData,
     issueTokensAndSetCookie,
 } from "../utils/auth.utils.js";
 import type { AuthenticatedRequest } from "../../constants/types.js";
@@ -32,18 +33,28 @@ export const registerUser = async (req: Request, res: Response) => {
                 .json({ message: "User with this username or email already exists" });
         }
 
-        const hashedPassword = hashPassword(password);
-
-        const createdUsers = await db
-            .insert(users)
-            .values({
-                userName,
-                email,
-                password: hashedPassword,
-                fullName,
-                role,
-            })
-            .returning();
+        const hashedPassword = await hashSensitiveData(password);
+        let createdUsers;
+        // Atomic transaction is used to avoid race condition
+        try {
+            createdUsers = await db.transaction(async (tx) => {
+                const user = await tx.insert(users)
+                    .values({
+                        userName,
+                        email,
+                        password: hashedPassword,
+                        fullName,
+                        role,
+                    })
+                    .returning();
+                return user;
+            });
+        } catch (insertError: any) {
+            if (insertError.code === '23505') {
+                return res.status(409).json({ message: "User with this username or email already exists" });
+            }
+            return res.status(500).json({ message: "Internal server error" });
+        }
 
         const newUser = createdUsers[0];
         if (!newUser) {
@@ -87,9 +98,8 @@ export const loginUser = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Invalid username or password" });
         }
 
-        const hashedPassword = hashPassword(password);
-
-        if (user.password !== hashedPassword) {
+        const isPasswordValid = await verifySensitiveData(password, user.password);
+        if (!isPasswordValid) {
             return res.status(401).json({ message: "Invalid username or password" });
         }
 
@@ -114,24 +124,16 @@ export const loginUser = async (req: Request, res: Response) => {
 export const logoutUser = async (req: Request, res: Response) => {
     try {
         const authReq = req as AuthenticatedRequest;
-        let userId = authReq.user?.id;
+        const userId = authReq.user?.id;
 
-        if (!userId && req.body && typeof req.body.userName === "string") {
-            const userList = await db
-                .select()
-                .from(users)
-                .where(eq(users.userName, req.body.userName))
-                .limit(1);
-            if (userList && userList.length > 0 && userList[0]) {
-                userId = userList[0].id;
-            }
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
         }
 
-        if (userId) {
-            await db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
-        }
+        await db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
 
         res.clearCookie("jwt");
+        res.clearCookie("refresh_token");
 
         return res.status(200).json({ message: "Logged out successfully" });
     } catch (error: any) {
