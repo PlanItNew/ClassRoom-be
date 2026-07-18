@@ -50,14 +50,7 @@ export const authenticateToken = async (
         };
         return next();
     } catch (error: any) {
-
-        if (error instanceof JsonWebTokenError) {
-            return res.status(401).json({ message: "Invalid access token." })
-        }
-        else if (error instanceof NotBeforeError) {
-            return res.status(401).json({ message: "Token is not active yet. Try again later." })
-        }
-        else if (error instanceof TokenExpiredError) {
+        if (error instanceof TokenExpiredError) {
             // Token is expired. 
             const accessTokenPayload = decodeToken(token);
             if (!accessTokenPayload || !accessTokenPayload.userId) {
@@ -127,16 +120,22 @@ export const authenticateToken = async (
 
                 return next();
             } catch (refreshError: any) {
-                if (refreshError instanceof JsonWebTokenError || refreshError instanceof NotBeforeError) {
-                    return res.status(401).json({ message: "Invalid session, please login again." });
-                }
                 if (refreshError instanceof TokenExpiredError) {
                     await db.delete(refreshTokens).where(eq(refreshTokens.userId, accessTokenPayload.userId));
                     return res.status(401).json({ message: "Session expired, please login again." });
                 }
+                if (refreshError instanceof JsonWebTokenError || refreshError instanceof NotBeforeError) {
+                    return res.status(401).json({ message: "Invalid session, please login again." });
+                }
+                console.error("Auth Middleware Error:", error);
                 return res.status(401).json({ message: "Internal Server Error." });
             }
-
+        }
+        else if (error instanceof NotBeforeError) {
+            return res.status(401).json({ message: "Token is not active yet. Try again later." })
+        }
+        else if (error instanceof JsonWebTokenError) {
+            return res.status(401).json({ message: "Invalid token." })
         }
         else {
             return res.status(401).json({ message: "Internal Server Error." });
