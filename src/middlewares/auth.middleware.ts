@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "../database/db.js";
+import { getNeonDb } from "../database/db.js";
 import { users, refreshTokens } from "../database/schema.js";
 import { verifyToken, decodeToken, generateToken, verifySensitiveData } from "../utils/auth.utils.js";
 import { applicationConfig } from "../config/index.js";
@@ -11,15 +11,16 @@ import type { Response, NextFunction } from "express";
 import { JsonWebTokenError, TokenExpiredError, NotBeforeError } from "jsonwebtoken";
 
 
-
 // Types 
-import type { AuthenticatedRequest } from "../../constants/types.js";
+import type { AuthenticatedRequest } from "../constants/types.js";
+
 
 export const authenticateToken = async (
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
 ) => {
+    const db = getNeonDb();
     const token =
         req.cookies?.jwt ||
         (req.headers["authorization"] && req.headers["authorization"].split(" ")[1]);

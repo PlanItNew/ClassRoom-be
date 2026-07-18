@@ -2,12 +2,12 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { getInMilliSec } from "./common.utils.js";
-import { db } from "../database/db.js";
+import { getNeonDb } from "../database/db.js";
 import { refreshTokens } from "../database/schema.js";
 import { applicationConfig } from "../config/index.js";
 
 // Types
-import type { JwtPayload } from "../../constants/types.js";
+import type { JwtPayload } from "../constants/types.js";
 import type { StringValue } from "ms";
 import type { Response } from "express";
 
@@ -39,6 +39,7 @@ export const decodeToken = (token: string): JwtPayload | null => {
 };
 
 export const issueTokensAndSetCookie = async (userId: string, res: Response) => {
+    const db = getNeonDb()
     const accessToken = generateToken(userId, "access");
     const refreshToken = generateToken(userId, "refresh");
     const createdAt = new Date();

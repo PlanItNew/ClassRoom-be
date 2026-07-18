@@ -1,16 +1,17 @@
 import type { Request, Response } from "express";
 import { eq, or } from "drizzle-orm";
-import { db } from "../database/db.js";
+import { getNeonDb } from "../database/db.js";
 import { users, refreshTokens } from "../database/schema.js";
 import {
     hashSensitiveData,
     verifySensitiveData,
     issueTokensAndSetCookie,
 } from "../utils/auth.utils.js";
-import type { AuthenticatedRequest } from "../../constants/types.js";
+import type { AuthenticatedRequest } from "../constants/types.js";
 
 export const registerUser = async (req: Request, res: Response) => {
     try {
+        const db = getNeonDb();
         const { userName, email, password, fullName, role } = req.body;
 
         if (!userName || !email || !password || !fullName || !role) {
@@ -37,7 +38,7 @@ export const registerUser = async (req: Request, res: Response) => {
         let createdUsers;
         // Atomic transaction is used to avoid race condition
         try {
-            createdUsers = await db.transaction(async (tx) => {
+            createdUsers = await db.transaction(async (tx: any) => {
                 const user = await tx.insert(users)
                     .values({
                         userName,
@@ -81,6 +82,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
 export const loginUser = async (req: Request, res: Response) => {
     try {
+        const db = getNeonDb();
         const { userName, password } = req.body;
 
         if (!userName || !password) {
@@ -123,6 +125,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const logoutUser = async (req: Request, res: Response) => {
     try {
+        const db = getNeonDb();
         const authReq = req as AuthenticatedRequest;
         const userId = authReq.user?.id;
 
