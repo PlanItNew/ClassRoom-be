@@ -1,10 +1,8 @@
+import "dotenv/config";
 import { ENV_TOKENS_REQUIED } from "../constants/constants.js";
-import dotenv from "dotenv";
 import { connectNeonDb } from "../database/db.js";
 import { getInMilliSec } from "./common.utils.js";
 import type { StringValue } from "ms";
-
-dotenv.config();
 
 export const verifyAndSetupEnv = () => {
     // 1. Check presence of required environment variables
@@ -48,8 +46,8 @@ export const verifyAndSetupEnv = () => {
 
     // 7. SALT_ROUNDS
     const saltRounds = Number(process.env.SALT_ROUNDS);
-    if (!Number.isInteger(saltRounds) || saltRounds <= 0) {
-        throw new Error(`Invalid SALT_ROUNDS: "${process.env.SALT_ROUNDS}". Must be a positive integer.`);
+    if (!Number.isInteger(saltRounds) || saltRounds < 2 || saltRounds > 20) {
+        throw new Error(`Invalid SALT_ROUNDS: "${process.env.SALT_ROUNDS}". Must be an integer between 4 and 31.`);
     }
 
     return true;
