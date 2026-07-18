@@ -22,17 +22,30 @@ app.use(errorHandler);
 
 async function applicationStartUp() {
     try {
-        await verifyAndSetupEnv()
-        console.log("Setup environment variables");
+        await verifyAndSetupEnv();
+        console.log("Setuping environment variables done.");
+
         await connectAllDb();
         console.log("Connect to database");
-        app.listen(applicationConfig.app.port, () => {
-            console.log(`Server started on port ${applicationConfig.app.port} at ${new Date().toLocaleString()}`);
+
+        await new Promise<void>((resolve, reject) => {
+            const server = app.listen(applicationConfig.app.port, () => {
+                console.log(`Server started on port ${applicationConfig.app.port} at ${new Date().toLocaleString()}`);
+                resolve();
+            });
+            server.on("error", (err) => {
+                reject(err);
+            });
         });
-    } catch (err: any) {
-        console.log(`Failed in setup ${err.message}`);
+
+    } catch (error: any) {
+        console.log(`Application crashed due to ${error.message || error}`);
+        process.exit(1);
     }
 }
 
-applicationStartUp();
+applicationStartUp().catch((err: any) => {
+    console.error(`Failed in setup ${err.message || err}`);
+    process.exitCode = 1;
+});
 
