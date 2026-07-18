@@ -22,6 +22,20 @@
       "when": 1783600787015,
       "tag": "0002_wandering_magneto",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784169624062,
+      "tag": "0003_slow_wildside",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784303687143,
+      "tag": "0004_fantastic_toxin",
+      "breakpoints": true
     }
   ]
 }

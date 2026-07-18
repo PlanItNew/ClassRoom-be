@@ -28,7 +28,8 @@ export const users = pgTable('users', {
     fullName: varchar('full_name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }).unique().notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-    password: varchar('password', { length: 1024 }).notNull()
+    password: varchar('password', { length: 1024 }).notNull(),
+    userName: varchar('user_name', { length: 255 }).unique().notNull()
 });
 
 export const subjects = pgTable('subjects', {
@@ -170,3 +171,12 @@ export const attemptAnswers = pgTable(
         questionId: index('idx_attempt_answers_question').on(table.questionId)
     })
 );
+
+export const refreshTokens = pgTable('refresh_tokens', {
+    userId: uuid('user_id')
+        .primaryKey()
+        .references(() => users.id, { onDelete: 'cascade' }),
+    token_hash: text('token_hash').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+});

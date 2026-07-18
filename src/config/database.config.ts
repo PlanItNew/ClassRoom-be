@@ -1,7 +1,7 @@
 import { databaseKey } from './database.key.js';
 
 export const databaseConfig = {
-    url: databaseKey,
+    databaseURL: databaseKey,
     maxConnections: 10,
     ssl: true,
 };
