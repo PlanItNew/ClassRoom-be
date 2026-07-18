@@ -3,8 +3,8 @@ import { eq, or } from "drizzle-orm";
 import { getNeonDb } from "../database/db.js";
 import { users, refreshTokens } from "../database/schema.js";
 import {
-    hashSensitiveData,
-    verifySensitiveData,
+    hashPassword,
+    verifyPassword,
     issueTokensAndSetCookie,
 } from "../utils/auth.utils.js";
 import type { AuthenticatedRequest } from "../constants/types.js";
@@ -34,7 +34,7 @@ export const registerUser = async (req: Request, res: Response) => {
                 .json({ message: "User with this username or email already exists" });
         }
 
-        const hashedPassword = await hashSensitiveData(password);
+        const hashedPassword = await hashPassword(password);
         let createdUsers;
         // Atomic transaction is used to avoid race condition
         try {
@@ -100,7 +100,7 @@ export const loginUser = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Invalid username or password" });
         }
 
-        const isPasswordValid = await verifySensitiveData(password, user.password);
+        const isPasswordValid = await verifyPassword(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: "Invalid username or password" });
         }

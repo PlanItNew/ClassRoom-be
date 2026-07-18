@@ -13,13 +13,33 @@ import type { Response } from "express";
 
 
 
-export const hashSensitiveData = async (data: string): Promise<string> => {
+export const hashPassword = async (password: string): Promise<string> => {
+    if (Buffer.byteLength(password, "utf8") > 72) {
+        throw new Error("Password exceeds maximum length of 72 bytes");
+    }
     const saltRounds = applicationConfig.app.salt_rounds;
-    return await bcrypt.hash(data, saltRounds);
+    return await bcrypt.hash(password, saltRounds);
 };
 
-export const verifySensitiveData = async (plainData: string, storedHash: string): Promise<boolean> => {
-    return await bcrypt.compare(plainData, storedHash);
+export const verifyPassword = async (plainPassword: string, storedHash: string): Promise<boolean> => {
+    if (!storedHash || Buffer.byteLength(plainPassword, "utf8") > 72) {
+        return false;
+    }
+    return await bcrypt.compare(plainPassword, storedHash);
+};
+
+// SHA-256 Token Hashing (no 72-byte limit)
+export const hashToken = (token: string): string => {
+    return crypto.createHash("sha256").update(token).digest("hex");
+};
+
+export const verifyHashedToken = (token: string, storedHash: string): boolean => {
+    if (!token || !storedHash) return false;
+    const computedHash = hashToken(token);
+    const bufA = Buffer.from(computedHash);
+    const bufB = Buffer.from(storedHash);
+    if (bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
 };
 
 export const generateToken = (userId: string, type: string) => {
@@ -45,7 +65,7 @@ export const issueTokensAndSetCookie = async (userId: string, res: Response) => 
     const createdAt = new Date();
     const expiresAt = new Date(createdAt.getTime() + getInMilliSec(applicationConfig.app.jwt_refresh_expiry as StringValue));
 
-    const hashedRefreshToken = await hashSensitiveData(refreshToken);
+    const hashedRefreshToken = hashToken(refreshToken);
 
     await db
         .insert(refreshTokens)

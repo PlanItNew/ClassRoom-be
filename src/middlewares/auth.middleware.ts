@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getNeonDb } from "../database/db.js";
 import { users, refreshTokens } from "../database/schema.js";
-import { verifyToken, decodeToken, generateToken, verifySensitiveData } from "../utils/auth.utils.js";
+import { verifyToken, decodeToken, generateToken, verifyHashedToken } from "../utils/auth.utils.js";
 import { applicationConfig } from "../config/index.js";
 import { getInMilliSec } from "../utils/common.utils.js";
 
@@ -90,8 +90,8 @@ export const authenticateToken = async (
                     return res.status(401).json({ message: "Session expired, please login again." });
                 }
 
-                // Verify the refresh token signature
-                const isMatchedRefreshToken = await verifySensitiveData(refreshToken, storedRefreshToken.token_hash);
+                // Verify the refresh token hash against stored hash
+                const isMatchedRefreshToken = verifyHashedToken(refreshToken, storedRefreshToken.token_hash);
                 if (!isMatchedRefreshToken) {
                     return res.status(401).json({ message: "Invalid token" })
                 }
