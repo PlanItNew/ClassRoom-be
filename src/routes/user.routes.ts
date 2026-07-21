@@ -1,4 +1,4 @@
-import Router from "express";
+import { Router } from "express"
 import { authenticateToken } from "../middlewares/auth.middleware.js";
 import { deleteUser, updateDetails } from "../controllers/user.controller.js";
 

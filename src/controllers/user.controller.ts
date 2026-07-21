@@ -34,10 +34,12 @@ export const updateDetails = async (req: Request, res: Response) => {
         const { fullName, phoneNumber } = req.body;
 
         const userList = await db.select().from(users).where(eq(users.id, userId));
-        if (!userList) {
+
+        const user = userList[0];
+
+        if (!user) {
             return res.status(400).json({ message: "User not found" })
         }
-        const user = userList[0];
 
         const updatedFullName = !fullName ? user.fullName : fullName;
         const updatedPhoneNumber = !phoneNumber ? user.phoneNumber : phoneNumber;
@@ -51,7 +53,7 @@ export const updateDetails = async (req: Request, res: Response) => {
             phoneNumber: updatedPhoneNumber
         }).where(eq(users.id, userId));
 
-        if (result) {
+        if (!result) {
             return res.status(400).json({ message: "Failed to update user" });
         }
 
