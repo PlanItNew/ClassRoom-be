@@ -29,7 +29,9 @@ export const users = pgTable('users', {
     email: varchar('email', { length: 255 }).unique().notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     password: varchar('password', { length: 1024 }).notNull(),
-    userName: varchar('user_name', { length: 255 }).unique().notNull()
+    userName: varchar('user_name', { length: 255 }).unique().notNull(),
+    phonenumber: varchar('phone_number', { length: 15 }).unique(),
+    profilePictureUrl: varchar('profile_picture_url', { length: 1024 })
 });
 
 export const subjects = pgTable('subjects', {
