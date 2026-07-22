@@ -1,6 +1,6 @@
 export const ENV_TOKENS_REQUIED = [
     "PORT",
-    "DATABASE_URL",
+    // "DATABASE_URL_NEON",
     "JWT_SECRET",
     "REFRESH_JWT_SECRET",
     "JWT_ACCESS_EXPIRY",

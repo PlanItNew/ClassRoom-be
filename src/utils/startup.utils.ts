@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { ENV_TOKENS_REQUIED } from "../constants/constants.js";
-import { connectNeonDb } from "../database/db.js";
+import { startLocalDb } from "../database/db.js";
 import { getInMilliSec } from "./common.utils.js";
 import type { StringValue } from "ms";
 
@@ -25,12 +25,14 @@ export const verifyAndSetupEnv = () => {
     }
 
     // 4. DATABASE_URL
-    const dbUrl = process.env.DATABASE_URL!;
-    try {
-        new URL(dbUrl);
-    } catch {
-        throw new Error(`Invalid DATABASE_URL format: "${dbUrl}". Must be a valid URL.`);
-    }
+    // const dbUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_NEON;
+    // if (dbUrl) {
+    //     try {
+    //         new URL(dbUrl);
+    //     } catch {
+    //         throw new Error(`Invalid DATABASE_URL format: "${dbUrl}". Must be a valid URL.`);
+    //     }
+    // }
 
     // 5. JWT_ACCESS_EXPIRY 
     const accessMs = getInMilliSec(process.env.JWT_ACCESS_EXPIRY as StringValue);
@@ -50,12 +52,21 @@ export const verifyAndSetupEnv = () => {
         throw new Error(`Invalid SALT_ROUNDS: "${process.env.SALT_ROUNDS}". Must be an integer between 4 and 31.`);
     }
 
+    // 8. DB User 
+    const db_user = process.env.DB_USER;
+    const db_password = process.env.DB_PASS || process.env.DB_PASSWORD;
+    const db_name = process.env.DB_NAME;
+
+    if (!db_user || !db_password || !db_name) {
+        throw new Error(`Missing database credentials`);
+    }
+
     return true;
 };
 
 export const connectAllDb = async () => {
     try {
-        await connectNeonDb();
+        await startLocalDb();
     } catch (error: any) {
         throw new Error(`Failed to connect to database: ${error.message || error}`);
     }
