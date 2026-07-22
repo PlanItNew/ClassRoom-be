@@ -1,0 +1,3 @@
+ALTER TABLE "users" ADD COLUMN "phone_number" varchar(15);--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN "profile_picture_url" varchar(1024);--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_phone_number_unique" UNIQUE("phone_number");
