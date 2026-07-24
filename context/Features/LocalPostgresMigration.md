@@ -14,7 +14,7 @@ Migrated the application database layer from Neon PostgreSQL serverless HTTP dri
 ### 2. Database Configuration & Connection Pool (`src/config/`)
 - Updated `database.key.ts` and `database.config.ts` to read local database credentials:
   - `DB_USER`
-  - `DB_PASS` / `DB_PASSWORD`
+  - `DB_PASSWORD`
   - `DB_NAME`
   - `DB_HOST` (default: `localhost`)
   - `DB_PORT` (default: `5432`)

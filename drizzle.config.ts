@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const user = process.env.DB_USER;
-const pass = process.env.DB_PASS || process.env.DB_PASSWORD || "";
+const pass = process.env.DB_PASSWORD || "";
 const host = process.env.DB_HOST;
 const port = process.env.DB_PORT;
 const name = process.env.DB_NAME;

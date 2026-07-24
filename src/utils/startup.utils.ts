@@ -54,7 +54,7 @@ export const verifyAndSetupEnv = () => {
 
     // 8. DB User 
     const db_user = process.env.DB_USER;
-    const db_password = process.env.DB_PASS || process.env.DB_PASSWORD;
+    const db_password = process.env.DB_PASSWORD;
     const db_name = process.env.DB_NAME;
 
     if (!db_user || !db_password || !db_name) {

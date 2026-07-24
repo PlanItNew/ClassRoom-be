@@ -39,6 +39,7 @@ export const startLocalDb = async () => {
         } catch (error: any) {
             retries--;
             if (retries === 0) {
+                localPostgresDb = null;
                 throw new Error(`Failed to connect to local Postgres DB: ${error.message || error}`);
             }
             console.log(`Waiting for Postgres to accept connections... (${retries} retries left)`);
@@ -53,6 +54,7 @@ export const startLocalDb = async () => {
         await migrate(localPostgresDb, { migrationsFolder: './drizzle' });
         console.log("✅ Database migrations applied successfully!");
     } catch (migrationError: any) {
+        localPostgresDb = null;
         console.error("Failed to run database migrations:", migrationError.message || migrationError);
         throw migrationError;
     }

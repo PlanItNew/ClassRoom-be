@@ -1,75 +1,84 @@
-# JWT Authentication Specification
+# JWT Authentication System Architecture & Specification
 
-## Overview
-Using JWT (JSON Web Token) authentication method using access tokens and refresh tokens.
-
-## Refresh Tokens Table
-Create a table with a `userId`-based primary key to store users' refresh tokens.
-
-## Token Specifications
-
-### Access Token Specification
-Payload carries:
-1. `userId`
-2. `iat` (issued at)
-3. `exp` (expiration time: 30 minutes)
-
-### Refresh Token Specification
-Payload carries:
-1. `userId`
-2. `iat` (issued at)
-3. `exp` (expiration time: 10 days)
-
-Store refresh tokens in the database using `userId` as the primary key.
+## 1. Overview
+The application implements a secure, dual-cookie JWT (JSON Web Token) authentication architecture using short-lived Access Tokens (30 minutes) and long-lived Refresh Tokens (10 days). Raw refresh tokens are never stored in the database; only SHA-256 hashes are persisted to prevent credential exposure in case of database leaks.
 
 ---
 
-## Authentication Flows
+## 2. Database Schema (`refresh_tokens`)
 
-### 1. Login
-- **Payload Needed**:
-  1. `userName`
-  2. `password`
-- **Actions**:
-  1. Check `userName` and verify hashed password.
-  2. Build a refresh token valid for 10 days and an access token valid for 30 minutes.
-  3. Store the refresh token in the database.
-- **Response**:
-  1. Return the JWT as a secure cookie with `httpOnly`, `secure`, and `expires` (30 minutes), along with a success message.
+```sql
+CREATE TABLE refresh_tokens (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL
+);
+```
 
-### 2. Logout
-- **Payload Needed**:
-  1. `userName`
-  2. JWT (Access Token)
-- **Actions**:
-  1. Delete the refresh token from the database.
-- **Response**:
-  1. Clear/unset the JWT cookie.
-
-### 3. Signup (User Creation)
-- **Payload Needed**:
-  1. `userName`
-  2. `email`
-  3. `password`
-  4. `fullName`
-  5. `role`
-- **Actions**:
-  1. Hash the password.
-  2. Create the user in the database.
-- **Response**:
-  1. Return the JWT as a secure cookie with `httpOnly`, `secure`, and `expires` (30 minutes), along with a success message.
+- **`userId`**: Primary key referencing `users.id` (one active refresh token session per user).
+- **`token_hash`**: SHA-256 hex digest of the issued refresh token.
+- **Timing-Safe Verification**: Verified using `crypto.timingSafeEqual` via `verifyHashedToken` helper to prevent timing attacks.
 
 ---
 
-## User Routes
-1. `POST /login`
-2. `POST /signup`
-3. `POST /logout`
+## 3. Token Specifications & Dual-Cookie Delivery
+
+### Access Token (`jwt` Cookie)
+- **Lifetime**: 30 minutes (`JWT_ACCESS_EXPIRY`)
+- **Payload**: `{ userId: string, iat: number, exp: number }`
+- **Delivery**: Set in `jwt` HTTP-only cookie.
+- **Cookie Security**: `httpOnly: true`, `sameSite: "strict"`, `secure: production`.
+
+### Refresh Token (`refresh_token` Cookie)
+- **Lifetime**: 10 days (`JWT_REFRESH_EXPIRY`)
+- **Payload**: `{ userId: string, iat: number, exp: number }`
+- **Storage**: Raw token sent to client via `refresh_token` cookie; SHA-256 hash stored in DB (`refresh_tokens.token_hash`).
+- **Cookie Security**: `httpOnly: true`, `sameSite: "strict"`, `secure: production`.
 
 ---
 
-## Middleware
+## 4. Authentication Flows
 
-### Authentication Middleware
-1. Validates the access token; if invalid or expired, attempts to refresh the token using the refresh token.
-2. Applied to all protected routes (excluding `/login` and `/signup`).
+### 1. Signup (`POST /api/auth/register`)
+- **Payload**: `{ userName, email, password, fullName, role }`
+- **Role Allowlisting**: Validated strictly against allowed enum values (`TEACHER` or `STUDENT`). Arbitrary or unapproved roles are rejected with `400 Bad Request`.
+- **User Creation**: Password hashed with `bcrypt` (salt rounds: 7). User created atomically within a database transaction.
+- **Cookie Delivery**: Calls `issueTokensAndSetCookie(userId, res)` to issue both `jwt` and `refresh_token` cookies.
+
+### 2. Login (`POST /api/auth/login`)
+- **Payload**: `{ userName, password }`
+- **Verification**: Looks up user by `userName` and verifies password using `bcrypt.compare`.
+- **Token Issue & Storage**: Generates access & refresh tokens, hashes the refresh token using SHA-256, upserts `token_hash` into `refresh_tokens` table (`onConflictDoUpdate`), and sets both cookies (`jwt` and `refresh_token`).
+
+### 3. Logout (`POST /api/auth/logout`)
+- **Protected Endpoint**: Requires `authenticateToken` middleware.
+- **Verified Identity**: `userId` is strictly derived from `req.user.id` (authenticated context).
+- **Server Revocation**: Deletes the user's refresh token record from `refresh_tokens` table (`DELETE FROM refresh_tokens WHERE user_id = userId`).
+- **Cookie Clearing**: Clears both `jwt` and `refresh_token` cookies via `res.clearCookie("jwt")` and `res.clearCookie("refresh_token")`.
+
+---
+
+## 5. Middleware & Automatic Token Refresh
+
+### `authenticateToken` Middleware Flow
+1. **Extract Token**: Extracts access token from `jwt` cookie (or `Authorization: Bearer` header).
+2. **Verify Access Token**:
+   - **Valid Access Token**: Fetches user details, populates `req.user`, and calls `next()`.
+3. **Selective Expiration Handling**:
+   - **`TokenExpiredError` (Only Expiration)**:
+     1. Decodes access token to retrieve `userId`.
+     2. Reads `refresh_token` cookie from client.
+     3. Verifies `refresh_token` signature and expiration.
+     4. Compares `userId` in access token vs refresh token payload.
+     5. Fetches stored `token_hash` from DB for `userId`.
+     6. Verifies refresh token hash using timing-safe comparison (`verifyHashedToken`).
+     7. Re-issues a fresh 30-minute access token (`jwt` cookie), sets `req.user`, and calls `next()`.
+   - **`JsonWebTokenError` / `NotBeforeError` (Malformed or Tampered Tokens)**:
+     - Immediately rejects with `401 Unauthorized`. Does **NOT** attempt token refresh.
+
+---
+
+## 6. Role Authorization (`requireRole` Middleware)
+- Protects endpoints by inspecting `req.user.role`.
+- Grants access if role matches required permission (e.g. `TEACHER` or `STUDENT`), otherwise responds with `403 Forbidden`.
