@@ -18,8 +18,8 @@ export const startLocalDb = async () => {
 
     const { host, port, user, password, database, maxConnections } = applicationConfig.database;
 
-    // 2. Initialize pg pool with max pool of 10
-    pgPool = new pg.Pool({
+    // 2. Initialize pg pool
+    const pool = new pg.Pool({
         host,
         port,
         user,
@@ -28,38 +28,51 @@ export const startLocalDb = async () => {
         max: maxConnections,
     });
 
-    localPostgresDb = drizzle(pgPool);
+    const db = drizzle(pool);
 
-    // 3. Verify database connection with retry (wait for container readiness)
-    let retries = 5;
-    while (retries > 0) {
-        try {
-            await localPostgresDb.execute(sql`SELECT 1`);
-            break;
-        } catch (error: any) {
-            retries--;
-            if (retries === 0) {
-                localPostgresDb = null;
-                throw new Error(`Failed to connect to local Postgres DB: ${error.message || error}`);
-            }
-            console.log(`Waiting for Postgres to accept connections... (${retries} retries left)`);
-            await new Promise((res) => setTimeout(res, 2000));
-        }
-    }
-
-    console.log("Connected to Local Postgres Database with pool size 10");
-
-    // 4. Run automatic migrations onto the local database
     try {
-        await migrate(localPostgresDb, { migrationsFolder: './drizzle' });
-        console.log("✅ Database migrations applied successfully!");
-    } catch (migrationError: any) {
-        localPostgresDb = null;
-        console.error("Failed to run database migrations:", migrationError.message || migrationError);
-        throw migrationError;
-    }
+        // 3. Verify database connection with retry (wait for container readiness)
+        let retries = 5;
+        while (retries > 0) {
+            try {
+                await db.execute(sql`SELECT 1`);
+                break;
+            } catch (error: any) {
+                retries--;
+                if (retries === 0) {
+                    await closeLocalDb();
+                    throw new Error(`Failed to connect to local Postgres DB: ${error.message || error}`);
+                }
+                console.log(`Waiting for Postgres to accept connections... (${retries} retries left)`);
+                await new Promise((res) => setTimeout(res, 2000));
+            }
+        }
 
-    return localPostgresDb;
+        console.log("Connected to Local Postgres Database with pool size 10");
+
+        // 4. Run automatic migrations onto the local database
+        await migrate(db, { migrationsFolder: './drizzle' });
+        console.log("✅ Database migrations applied successfully!");
+
+        // 5. Publish state only after readiness and migrations succeed
+        pgPool = pool;
+        localPostgresDb = db;
+        return localPostgresDb;
+    } catch (error: any) {
+        await closeLocalDb();
+        console.error("Failed to initialize database:", error.message || error);
+        throw error;
+    }
+};
+
+export const closeLocalDb = async () => {
+    if (pgPool) {
+        await pgPool.end().then(res => console.log("Pool closed successfully")).catch((e) => {
+            console.error("Failed to close pool:", e.message || e)
+        });
+        pgPool = null;
+    }
+    localPostgresDb = null;
 };
 
 
