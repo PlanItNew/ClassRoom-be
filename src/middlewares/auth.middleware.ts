@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { getNeonDb } from "../database/db.js";
+import { getPostgresDb } from "../database/db.js";
 import { users, refreshTokens } from "../database/schema.js";
 import { verifyToken, decodeToken, generateToken, verifyHashedToken } from "../utils/auth.utils.js";
 import { applicationConfig } from "../config/index.js";
@@ -8,19 +8,22 @@ import { getInMilliSec } from "../utils/common.utils.js";
 // Types 
 import { type StringValue } from "ms";
 import type { Response, NextFunction } from "express";
-import { JsonWebTokenError, TokenExpiredError, NotBeforeError } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
+
 
 
 // Types 
 import type { AuthenticatedRequest } from "../constants/types.js";
 
 
+const { JsonWebTokenError, TokenExpiredError, NotBeforeError } = jwt;
+
 export const authenticateToken = async (
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
 ) => {
-    const db = getNeonDb();
+    const db = getPostgresDb();
     const token =
         req.cookies?.jwt ||
         (req.headers["authorization"] && req.headers["authorization"].split(" ")[1]);
@@ -86,6 +89,10 @@ export const authenticateToken = async (
                 // Verify the refresh token hash against stored hash
                 const isMatchedRefreshToken = verifyHashedToken(refreshToken, storedRefreshToken.token_hash);
                 if (!isMatchedRefreshToken) {
+                    // Clear all cookies and respond with 401
+                    await db.delete(refreshTokens).where(eq(refreshTokens.userId, refreshTokenPayload.userId));
+                    res.clearCookie("jwt");
+                    res.clearCookie("refresh_token");
                     return res.status(401).json({ message: "Invalid token" })
                 }
 

@@ -1,4 +1,4 @@
-import { getNeonDb } from "../database/db.js";
+import { getPostgresDb } from "../database/db.js";
 import { users } from "../database/schema.js";
 import { eq } from "drizzle-orm";
 
@@ -8,7 +8,7 @@ import type { AuthenticatedRequest } from "../constants/types.js";
 
 export const deleteUser = async (req: Request, res: Response) => {
     try {
-        const db = getNeonDb();
+        const db = getPostgresDb();
         const authReq = req as AuthenticatedRequest;
         const userId = authReq.user?.id;
         if (!userId) {
@@ -25,7 +25,7 @@ export const deleteUser = async (req: Request, res: Response) => {
 
 export const updateDetails = async (req: Request, res: Response) => {
     try {
-        const db = getNeonDb();
+        const db = getPostgresDb();
         const authReq = req as AuthenticatedRequest;
         const userId = authReq.user?.id;
         if (!userId) {

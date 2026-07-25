@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { eq, or } from "drizzle-orm";
-import { getNeonDb } from "../database/db.js";
+import { getPostgresDb } from "../database/db.js";
 import { users, refreshTokens } from "../database/schema.js";
 import {
     hashPassword,
@@ -11,7 +11,7 @@ import type { AuthenticatedRequest } from "../constants/types.js";
 
 export const registerUser = async (req: Request, res: Response) => {
     try {
-        const db = getNeonDb();
+        const db = getPostgresDb();
         const { userName, email, password, fullName, role } = req.body;
 
         if (!userName || !email || !password || !fullName || !role) {
@@ -82,7 +82,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
 export const loginUser = async (req: Request, res: Response) => {
     try {
-        const db = getNeonDb();
+        const db = getPostgresDb();
         const { userName, password } = req.body;
 
         if (!userName || !password) {
@@ -125,7 +125,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const logoutUser = async (req: Request, res: Response) => {
     try {
-        const db = getNeonDb();
+        const db = getPostgresDb();
         const authReq = req as AuthenticatedRequest;
         const userId = authReq.user?.id;
 
