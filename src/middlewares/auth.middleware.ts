@@ -89,6 +89,8 @@ export const authenticateToken = async (
                 // Verify the refresh token hash against stored hash
                 const isMatchedRefreshToken = verifyHashedToken(refreshToken, storedRefreshToken.token_hash);
                 if (!isMatchedRefreshToken) {
+                    res.clearCookie("jwt");
+                    res.clearCookie("refresh_token");
                     return res.status(401).json({ message: "Invalid token" })
                 }
 
