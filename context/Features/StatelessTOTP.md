@@ -69,3 +69,6 @@ const otp = await totpUtil.generateOtp("user_id_123");
 // Verify OTP submitted by user
 const isValid = await totpUtil.verifyOtp("user_id_123", otp);
 ```
+
+
+---Done---
