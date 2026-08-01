@@ -78,15 +78,15 @@ export class TimeWindowOTP {
      * Verifies the provided OTP against the configured time windows.
      */
     public async verifyOtp(userSecret: string, token: string): Promise<boolean> {
-        if (!userSecret || !token || token.length !== 6) {
+        if (!userSecret || !token || !/^\d{6}$/.test(token)) {
             return false;
         }
 
         const combinedSecret = this.getCombinedSecret(userSecret);
 
         // Calculate epoch tolerance in seconds for look-back and look-forward validation
-        const pastSec = this.lookBack <= 10 ? this.lookBack * this.timeWindow : this.lookBack;
-        const futureSec = this.lookForward <= 10 ? this.lookForward * this.timeWindow : this.lookForward;
+        const pastSec = this.lookBack * this.timeWindow
+        const futureSec = this.lookForward * this.timeWindow
 
         try {
             const result = await this.totp.verify(token, {
