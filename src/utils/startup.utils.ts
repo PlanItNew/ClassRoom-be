@@ -61,6 +61,18 @@ export const verifyAndSetupEnv = () => {
         throw new Error(`Missing database credentials`);
     }
 
+    // 9. TOTP validations 
+    const otp_secret_key = process.env.OTP_SECRET_KEY;
+    const time_window_raw = process.env.TIME_WINDOW;
+    const time_window = time_window_raw ? parseInt(time_window_raw, 10) : NaN;
+
+    if (!otp_secret_key || otp_secret_key.length < 32 || !Number.isInteger(time_window) || time_window <= 0) {
+        throw new Error(`Missing OTP configuration
+            \nKey: ${otp_secret_key && otp_secret_key.length > 32 ? "Key is present" : "OTP_SECRET_KEY is missing or not length of 32."}
+            \nWindow: ${time_window && Number.isInteger(time_window) ? "Window is valid" : "TIME_WINDOW is missing or not an integer"}`
+        );
+    }
+
     return true;
 };
 
