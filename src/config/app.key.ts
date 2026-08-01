@@ -7,5 +7,9 @@ export const appKeys = {
     jwt_access_expiry: process.env.JWT_ACCESS_EXPIRY || "30m",
     jwt_refresh_expiry: process.env.JWT_REFRESH_EXPIRY || "10d",
     password_salt: process.env.PASSWORD_SALT || "",
-    salt_rounds: parseInt(process.env.SALT_ROUNDS || process.env.SALT_ROUND || "10", 10),
+    salt_rounds: parseInt(process.env.SALT_ROUNDS || "10", 10),
+    otp_secret_key: process.env.OTP_SECRET_KEY || "",
+    time_window: parseInt(process.env.TIME_WINDOW || "60", 10),
+    look_back: parseInt(process.env.LOOK_BACK || "1", 10),
+    look_forward: parseInt(process.env.LOOK_FORWARD || "0", 10),
 };
