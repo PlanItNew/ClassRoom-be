@@ -26,11 +26,14 @@ export class TimeWindowOTP {
      * Constructor for TimeWindowOTP. Enforces Singleton pattern when instantiated with default config parameters.
      */
     constructor(
-        secret: string = appConfig.otp_secret_key,
+        secret: string = appConfig.otp_secret_key as string,
         timeWindow: number = appConfig.time_window,
         lookBack: number = appConfig.look_back ?? 1,
         lookForward: number = appConfig.look_forward ?? 0
     ) {
+        if (!secret || secret.length < 32) {
+            throw new Error('OTP_SECRET_KEY must be set and at least 32 characters long');
+        }
         this.serverSecret = secret;
         this.timeWindow = timeWindow;
         this.lookBack = lookBack;
@@ -52,6 +55,15 @@ export class TimeWindowOTP {
             TimeWindowOTP.instance = new TimeWindowOTP();
         }
         return TimeWindowOTP.instance;
+    }
+
+    /**
+     * Returns the rounded window timestamp (start of current time block) in seconds.
+     * Formula: floor(timestamp / timeWindow) * timeWindow
+     */
+    public getTimeWindow(timestampInSeconds?: number): number {
+        const ts = timestampInSeconds ?? Math.floor(Date.now() / 1000);
+        return Math.floor(ts / this.timeWindow) * this.timeWindow;
     }
 
     /**
