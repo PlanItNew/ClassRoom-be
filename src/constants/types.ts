@@ -14,3 +14,7 @@ export interface JwtPayload {
     iat?: number;
     exp?: number;
 }
+
+export enum EmailTemplateType {
+    SIGNUP_OTP = "signup-otp",
+}

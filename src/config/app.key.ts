@@ -12,4 +12,8 @@ export const appKeys = {
     time_window: parseInt(process.env.TIME_WINDOW as string, 10),
     look_back: parseInt(process.env.LOOK_BACK || "1", 10),
     look_forward: parseInt(process.env.LOOK_FORWARD || "0", 10),
+    // Email notfication related 
+    brevo_api_key: process.env.SEND_BREVO_API_KEY || "",
+    brevo_sender_email: process.env.BREVO_SENDER_MAIL || "",
+    brevo_sender_name: process.env.BREVO_SENDER_NAME || "",
 };

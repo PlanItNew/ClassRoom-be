@@ -31,7 +31,8 @@ export const users = pgTable('users', {
     password: varchar('password', { length: 1024 }).notNull(),
     userName: varchar('user_name', { length: 255 }).unique().notNull(),
     phoneNumber: varchar('phone_number', { length: 15 }).unique(),
-    profilePictureUrl: varchar('profile_picture_url', { length: 1024 })
+    profilePictureUrl: varchar('profile_picture_url', { length: 1024 }),
+    verified: boolean('verified').default(false).notNull()
 });
 
 export const subjects = pgTable('subjects', {

@@ -25,7 +25,7 @@ export class TimeWindowOTP {
     /**
      * Constructor for TimeWindowOTP. Enforces Singleton pattern when instantiated with default config parameters.
      */
-    constructor(
+    private constructor(
         secret: string = appConfig.otp_secret_key as string,
         timeWindow: number = appConfig.time_window,
         lookBack: number = appConfig.look_back ?? 1,

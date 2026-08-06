@@ -5,18 +5,27 @@ import { applicationConfig } from "./src/config/index.js";
 import routes from "./src/routes/index.js";
 import { errorHandler } from "./src/middlewares/error.middleware.js";
 import { connectAllDb, verifyAndSetupEnv } from "./src/utils/startup.utils.js";
+import cors from "cors";
 
 const app = express();
 
+app.use(cors({
+    origin: process.env.NODE_ENV === "production"
+        ? applicationConfig.app.clientUrl
+        : true,
+    credentials: true,
+}));
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
 
+
+
+app.use("/api", routes);
+
 app.get("/", (req, res) => {
     res.json({ message: "edu-ex Backend API is running successfully" });
 });
-
-app.use("/api", routes);
 
 app.use(errorHandler);
 

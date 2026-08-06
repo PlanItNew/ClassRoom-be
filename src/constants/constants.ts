@@ -9,3 +9,7 @@ export const ENV_TOKENS_REQUIED = [
     "SALT_ROUNDS",
     "PASSWORD_SALT"
 ]
+
+export const templateMap = {
+    "signup-otp": "../templates/signupTemplate.html",
+}
