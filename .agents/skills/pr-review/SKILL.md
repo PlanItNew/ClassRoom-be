@@ -366,7 +366,8 @@ Post every individual validated issue as a **separate inline review comment plac
 Every inline comment MUST strictly follow this exact template structure:
 
 ```markdown
-Title :- 🤖 **CodeRabbit-AI Bot** • [Security | Edge Case | Incorrect Flow] - [High | Medium | Low]: [Short Descriptive Title]
+Title :- 🤖 **[Name of reviewer bhave a AI Agent adding the comments]** • [Security | Edge Case | Incorrect Flow] - [High | Medium | Low]: [Short Descriptive Title]
+
 
 -------
 Description :- 
@@ -377,11 +378,9 @@ Description :-
 [Clear explanation of the bug, security risk, edge case failure, or incorrect flow created by this code]
    source :- 
    - [Link 1: Documentation, blog, or CVE reference]
-   - [Link 2: Additional reference link if applicable]
 
 ----- 
 Solution :- (Can have 1 or 2 at max 3)
-Approche 1 :- 
   Detailed approche :- [Explanation of how to resolve the issue]
   Soruce [to check how it is implemented] :- [Documentation or reference link]
    Fix Suggestion :- 
