@@ -10,9 +10,7 @@ import cors from "cors";
 const app = express();
 
 app.use(cors({
-    origin: process.env.NODE_ENV === "production"
-        ? applicationConfig.app.clientUrl
-        : true,
+    origin: applicationConfig.app.clientUrl || "http://localhost:5001",
     credentials: true,
 }));
 app.use(helmet());
