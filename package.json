@@ -25,7 +25,6 @@
     "@getbrevo/brevo": "^6.0.2",
     "@neondatabase/serverless": "^1.1.0",
     "bcrypt": "^6.0.0",
-    "brevo": "^1.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "docker-compose": "^1.4.2",

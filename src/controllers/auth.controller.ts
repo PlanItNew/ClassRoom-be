@@ -187,9 +187,9 @@ export const completeSignup = async (req: Request, res: Response) => {
     try {
 
         const db = getPostgresDb();
-        const { userId, otp, verficationType } = req.body;
+        const { userId, otp, verificationType } = req.body;
 
-        if (verficationType !== "sign-up") {
+        if (verificationType !== "sign-up") {
             return res.status(400).json({ message: "Invalid verfication." });
         }
 

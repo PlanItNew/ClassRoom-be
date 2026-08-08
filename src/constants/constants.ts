@@ -1,3 +1,5 @@
+import path from "path";
+
 export const ENV_TOKENS_REQUIED = [
     "PORT",
     // "DATABASE_URL_NEON",
@@ -11,5 +13,5 @@ export const ENV_TOKENS_REQUIED = [
 ]
 
 export const templateMap = {
-    "signup-otp": "../templates/signupTemplate.html",
+    "signup-otp": path.resolve(process.cwd(), "src/templates/signupTemplate.html"),
 }

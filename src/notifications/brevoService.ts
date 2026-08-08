@@ -58,20 +58,17 @@ class BrevoService {
                 params: {
                     name: toName,
                     otp: otp,
-                    time_window: appConfig.time_window,
-                    login_time: new Date().toLocaleString(),
-                    user_agent: userAgent || "unknown device",
+                    validity_minutes: `${appConfig.time_window} seconds`,
+                    signup_time: new Date().toLocaleString(),
+                    device_info: userAgent || "unknown device",
                     ip_address: ipAddress || "unknown device"
                 },
                 subject: "OTP Verification"
             })
         }
         catch (error: any) {
-            throw new Error(`Failed to send message ${error.message} details\n
+            throw new Error(`Failed to send sign-up OTP message ${error.message} details\n
             Email :- ${toEmail}\n
-            IP Address :- ${ipAddress}\n
-            User Agent :- ${userAgent}\n
-            OTP :- ${otp}\n
             Name :- ${toName}\n`)
         }
     }
