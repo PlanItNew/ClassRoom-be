@@ -22,5 +22,5 @@ export const getIp = (req: any) => {
 }
 
 export const getUserAgent = (req: any) => {
-    return req.headers['user-agent'];
+    return req.headers['X-Device-Info'] || req.headers['user-agent'];
 }

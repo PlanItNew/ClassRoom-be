@@ -74,8 +74,8 @@ export const verifyAndSetupEnv = () => {
     }
 
     // 10. brevo email
-    const brevo_api_key = process.env.BREVO_API_KEY;
-    const brevo_sender_email = process.env.BREVO_SENDER_MAIL;
+    const brevo_api_key = process.env.SEND_BREVO_API_KEY;
+    const brevo_sender_email = process.env.SEND_BREVO_API_KEY;
     const brevo_sender_name = process.env.BREVO_SENDER_NAME;
     if (!brevo_api_key || !brevo_sender_email || !brevo_sender_name) {
         throw new Error("Missing brevo configuration");

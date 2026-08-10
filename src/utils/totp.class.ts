@@ -83,30 +83,36 @@ export class TimeWindowOTP {
             throw new Error("User secret or user ID is required to generate OTP");
         }
         const combinedSecret = this.getCombinedSecret(userSecret);
-        return await this.totp.generate({ secret: combinedSecret });
+        const otpg = await this.totp.generate({ secret: combinedSecret });
+        return otpg;
     }
 
     /**
      * Verifies the provided OTP against the configured time windows.
      */
-    public async verifyOtp(userSecret: string, token: string): Promise<boolean> {
-        if (!userSecret || !token || !/^\d{6}$/.test(token)) {
+    public async verifyOtp(userSecret: string, token: string | number): Promise<boolean> {
+        const tokenStr = String(token ?? "").trim();
+        if (!userSecret || !tokenStr || !/^\d{6}$/.test(tokenStr)) {
             return false;
         }
 
         const combinedSecret = this.getCombinedSecret(userSecret);
 
-        // Calculate epoch tolerance in seconds for look-back and look-forward validation
-        const pastSec = this.lookBack * this.timeWindow
-        const futureSec = this.lookForward * this.timeWindow
+        // Calculate epoch tolerance in seconds. Cap to max allowed sum of 5800s to avoid EpochToleranceTooLargeError from otplib.
+        let pastSec = Math.max(0, this.lookBack * this.timeWindow);
+        let futureSec = Math.max(0, this.lookForward * this.timeWindow);
+        if (pastSec + futureSec > 5800) {
+            pastSec = Math.min(pastSec, 2900);
+            futureSec = Math.min(futureSec, 2900);
+        }
 
         try {
-            const result = await this.totp.verify(token, {
+            const result = await this.totp.verify(tokenStr, {
                 secret: combinedSecret,
                 epochTolerance: [pastSec, futureSec],
             });
             return result.valid;
-        } catch {
+        } catch (error: any) {
             return false;
         }
     }

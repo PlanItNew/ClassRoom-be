@@ -32,6 +32,15 @@ class BrevoService {
         return fs.readFileSync(path, "utf-8");
     }
 
+    /**
+     * Replaces {{ params.key }} placeholders in a template string with values from a params map.
+     * Brevo only renders params for stored templateId emails — NOT for raw htmlContent.
+     * We must substitute locally before sending.
+     */
+    private interpolateTemplate(html: string, params: Record<string, string | undefined>): string {
+        return html.replace(/{{\s*params\.(\w+)\s*}}/g, (_, key) => params[key] ?? "");
+    }
+
     public async sendEmail(
         toEmail: string,
         toName: string,
@@ -42,34 +51,32 @@ class BrevoService {
     ) {
         try {
             if (!validateEmail(toEmail) || !toName || toName.trim() === "" || toEmail.trim() === "") {
-                throw new Error(`Invalid email ${toEmail} or name ${toName}`)
+                throw new Error(`Invalid email or name provided`);
             }
-            const htmlContent = this.loadTemplate(emailType);
+
+            const rawHtml = this.loadTemplate(emailType);
+            const params: Record<string, string | undefined> = {
+                name: toName,
+                otp: otp,
+                validity_minutes: `${appConfig.time_window} seconds`,
+                signup_time: new Date().toLocaleString(),
+                device_info: userAgent || "unknown device",
+                ip_address: ipAddress || "unknown",
+            };
+            const htmlContent = this.interpolateTemplate(rawHtml, params);
 
             await this.brevoClient.transactionalEmails.sendTransacEmail({
-                htmlContent: String(htmlContent),
+                htmlContent,
                 sender: {
                     email: appConfig.brevo_sender_email,
                     name: appConfig.brevo_sender_name
                 },
-                to: [
-                    { email: toEmail, name: toName }
-                ],
-                params: {
-                    name: toName,
-                    otp: otp,
-                    validity_minutes: `${appConfig.time_window} seconds`,
-                    signup_time: new Date().toLocaleString(),
-                    device_info: userAgent || "unknown device",
-                    ip_address: ipAddress || "unknown device"
-                },
+                to: [{ email: toEmail, name: toName }],
                 subject: "OTP Verification"
-            })
-        }
-        catch (error: any) {
-            throw new Error(`Failed to send sign-up OTP message ${error.message} details\n
-            Email :- ${toEmail}\n
-            Name :- ${toName}\n`)
+            });
+        } catch (error: any) {
+            console.error(`[BrevoService] Failed to send ${emailType} email to ${toEmail}:`, error.message);
+            throw new Error("Failed to send transactional email notification.");
         }
     }
 }

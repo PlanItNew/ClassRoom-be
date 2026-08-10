@@ -15,3 +15,9 @@ export const ENV_TOKENS_REQUIED = [
 export const templateMap = {
     "signup-otp": path.resolve(process.cwd(), "src/templates/signupTemplate.html"),
 }
+
+export const verificationTypes = {
+    SIGNUP: "sign-up",
+    FORGOT: "forgot",
+    LOGIN: "login"
+}

@@ -14,6 +14,7 @@ import { EmailTemplateType, type AuthenticatedRequest } from "../constants/types
 import { totpUtil } from "../utils/totp.class.js";
 import brevoService from "../notifications/brevoService.js";
 import { getIp, getUserAgent } from "../utils/common.utils.js";
+import { verificationTypes } from "../constants/constants.js";
 
 export const registerUser = async (req: Request, res: Response) => {
     try {
@@ -183,7 +184,7 @@ export const logoutUser = async (req: Request, res: Response) => {
     }
 };
 
-export const completeSignup = async (req: Request, res: Response) => {
+export const verifyOTP = async (req: Request, res: Response) => {
     try {
 
         const db = getPostgresDb();
@@ -207,21 +208,28 @@ export const completeSignup = async (req: Request, res: Response) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        await db.update(users).set({ verified: true }).where(eq(users.id, userId));
+        if (verificationType === verificationTypes.SIGNUP || verificationType === verificationTypes.LOGIN) {
+            const { accessToken } = await issueTokensAndSetCookie(userId, res);
 
-        const { accessToken } = await issueTokensAndSetCookie(userId, res);
+            if (verificationType === verificationTypes.SIGNUP) {
+                await db.update(users).set({ verified: true }).where(eq(users.id, userId));
+            }
 
-        return res.status(200).json({
-            message: "User verified successfully",
-            accessToken,
-            user: {
-                id: userId,
-                role: user[0].role,
-                email: user[0].email,
-                fullName: user[0].fullName,
-                userName: user[0].userName,
-            },
-        });
+            return res.status(200).json({
+                message: verificationType === verificationTypes.SIGNUP ? "User verified successfully" : "User logged in successfully",
+                accessToken,
+                user: {
+                    id: userId,
+                    role: user[0].role,
+                    email: user[0].email,
+                    fullName: user[0].fullName,
+                    userName: user[0].userName,
+                },
+            });
+        }
+        else {
+            return res.status(400).json({ message: "Invalid verification type" });
+        }
     } catch (error: any) {
         console.error("Error in completeSignup:", error);
         return res.status(500).json({ message: "Internal server error" });
