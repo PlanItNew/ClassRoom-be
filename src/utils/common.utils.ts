@@ -24,3 +24,8 @@ export const getIp = (req: any) => {
 export const getUserAgent = (req: any) => {
     return req.headers['X-Device-Info'] || req.headers['user-agent'];
 }
+
+
+export const getUniqueId = (type: string, userId: string) => {
+    return userId + ":" + type + ":" + Math.random().toString(36).substring(2, 15);
+}

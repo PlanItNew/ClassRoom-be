@@ -14,10 +14,16 @@ export const ENV_TOKENS_REQUIED = [
 
 export const templateMap = {
     "signup-otp": path.resolve(process.cwd(), "src/templates/signupTemplate.html"),
+    "signin-otp": path.resolve(process.cwd(), "src/templates/signinTemplate.html"),
 }
 
 export const verificationTypes = {
     SIGNUP: "sign-up",
-    FORGOT: "forgot",
+    FORGOT: "sign-in",
     LOGIN: "login"
+}
+
+
+export const bullMqQueues = {
+    EMAIL: "email_brevo"
 }

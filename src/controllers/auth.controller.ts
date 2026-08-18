@@ -12,13 +12,17 @@ import {
 import { EmailTemplateType, type AuthenticatedRequest } from "../constants/types.js";
 
 import { totpUtil } from "../utils/totp.class.js";
-import brevoService from "../notifications/brevoService.js";
-import { getIp, getUserAgent } from "../utils/common.utils.js";
+import { getIp, getUserAgent, getUniqueId } from "../utils/common.utils.js";
 import { verificationTypes } from "../constants/constants.js";
+
+// Queues 
+import { getEmailQueue } from "../queues/email.queue.js";
 
 export const registerUser = async (req: Request, res: Response) => {
     try {
         const db = getPostgresDb();
+        const emailQueue = getEmailQueue();
+
         const { userName, email, password, fullName, role } = req.body;
 
         if (!userName || !email || !password || !fullName || !role) {
@@ -77,21 +81,36 @@ export const registerUser = async (req: Request, res: Response) => {
         const otp = await totpUtil.generateOtp(newUser.id);
 
         // Currently as sycn service later upgraded to async using bull mq
-        await brevoService.sendEmail(
-            newUser.email,
-            newUser.fullName,
-            EmailTemplateType.SIGNUP_OTP,
-            otp,
-            getUserAgent(req),
-            getIp(req)
+        await emailQueue.add(
+            getUniqueId(EmailTemplateType.SIGNUP_OTP, newUser.id),
+            {
+                to: newUser.email,
+                fullName: newUser.fullName,
+                otp,
+                userAgent: getUserAgent(req),
+                ip: getIp(req),
+                template: EmailTemplateType.SIGNUP_OTP,
+            },
+            {
+                removeOnComplete: true,
+                removeOnFail: true,
+            }
         );
+        // await brevoService.sendEmail(
+        //     newUser.email,
+        //     newUser.fullName,
+        //     EmailTemplateType.SIGNUP_OTP,
+        //     otp,
+        //     getUserAgent(req),
+        //     getIp(req)
+        // );
 
         return res.status(201).json({
             message: "User registered successfully",
             user: {
                 id: newUser.id,
                 verified: false,
-                verificationFor: "sign-up"
+                verificationFor: verificationTypes.SIGNUP
             },
         });
     } catch (error: any) {
@@ -103,6 +122,8 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
     try {
         const db = getPostgresDb();
+        const emailQueue = getEmailQueue();
+
         const { userName, password, email } = req.body;
 
         if ((!userName && !email) || !password) {
@@ -125,19 +146,36 @@ export const loginUser = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Invalid username or password" });
         }
 
-        const { accessToken } = await issueTokensAndSetCookie(user.id, res);
+        // const { accessToken } = await issueTokensAndSetCookie(user.id, res);
+
+        // Generate OTP for login verification
+        const otp = await totpUtil.generateOtp(user.id);
+
+        await emailQueue.add(
+            getUniqueId(EmailTemplateType.SIGNIN_OTP, user.id),
+            {
+                to: user.email,
+                fullName: user.fullName,
+                otp,
+                userAgent: getUserAgent(req),
+                ip: getIp(req),
+                template: EmailTemplateType.SIGNIN_OTP,
+            },
+            {
+                removeOnComplete: true,
+                removeOnFail: true,
+            }
+        );
 
         return res.status(200).json({
-            message: "Login successful",
-            accessToken,
+            message: "Pending verification",
             user: {
                 id: user.id,
-                userName: user.userName,
-                email: user.email,
-                fullName: user.fullName,
-                role: user.role,
-            },
+                verified: false,
+                verificationFor: verificationTypes.LOGIN
+            }
         });
+
     } catch (error: any) {
         console.error("Error in loginUser:", error);
         return res.status(500).json({ message: "Internal server error" });
@@ -190,8 +228,8 @@ export const verifyOTP = async (req: Request, res: Response) => {
         const db = getPostgresDb();
         const { userId, otp, verificationType } = req.body;
 
-        if (verificationType !== "sign-up") {
-            return res.status(400).json({ message: "Invalid verfication." });
+        if (verificationType !== verificationTypes.SIGNUP && verificationType !== verificationTypes.LOGIN) {
+            return res.status(400).json({ message: "Invalid verification." });
         }
 
         if (!userId || !otp) {

@@ -4,7 +4,16 @@ import helmet from "helmet";
 import { applicationConfig } from "./src/config/index.js";
 import routes from "./src/routes/index.js";
 import { errorHandler } from "./src/middlewares/error.middleware.js";
-import { connectAllDb, verifyAndSetupEnv } from "./src/utils/startup.utils.js";
+import {
+    connectAllDb,
+    verifyAndSetupEnv,
+    connectRedis,
+    closeRedisConnection,
+    closeAllDb,
+    startAllQueues,
+    startAllWorkers,
+    closeAllQueuesAndWorkers,
+} from "./src/utils/startup.utils.js";
 import cors from "cors";
 
 const app = express();
@@ -16,8 +25,6 @@ app.use(cors({
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
-
-
 
 app.use("/api", routes);
 
@@ -33,7 +40,12 @@ async function applicationStartUp() {
         console.log("Setuping environment variables done.");
 
         await connectAllDb();
-        console.log("Connect to database");
+        await connectRedis();
+        console.log("Connected to database and Redis");
+
+        // Start all queues and background workers
+        await startAllQueues();
+        await startAllWorkers();
 
         await new Promise<void>((resolve, reject) => {
             const server = app.listen(applicationConfig.app.port, () => {
@@ -47,12 +59,19 @@ async function applicationStartUp() {
 
     } catch (error: any) {
         console.log(`Application crashed due to ${error.message || error}`);
+        await closeAllQueuesAndWorkers();
+        await closeRedisConnection();
+        await closeAllDb();
         process.exit(1);
     }
 }
 
-applicationStartUp().catch((err: any) => {
+applicationStartUp().catch(async (err: any) => {
     console.error(`Failed in setup ${err.message || err}`);
+    await closeAllQueuesAndWorkers();
+    await closeRedisConnection();
+    await closeAllDb();
     process.exitCode = 1;
 });
+
 

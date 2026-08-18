@@ -1,6 +1,8 @@
 import "dotenv/config";
 import { ENV_TOKENS_REQUIED } from "../constants/constants.js";
-import { startLocalDb } from "../database/db.js";
+import { closeLocalDb, closeRedis, startLocalDb, startRedis } from "../database/db.js";
+import { startAllQueues, closeAllQueues } from "../queues/index.js";
+import { startAllWorkers, closeAllWorkers } from "../workers/index.js";
 import { getInMilliSec } from "./common.utils.js";
 import type { StringValue } from "ms";
 
@@ -81,6 +83,15 @@ export const verifyAndSetupEnv = () => {
         throw new Error("Missing brevo configuration");
     }
 
+    // 11. redis 
+    const redis_host = process.env.REDIS_HOST;
+    const redis_port = process.env.REDIS_PORT;
+    const redis_password = process.env.REDIS_PASSWORD;
+
+    if (!redis_host || !redis_port || !redis_password) {
+        throw new Error("Missing redis configuration");
+    }
+
     return true;
 };
 
@@ -90,4 +101,36 @@ export const connectAllDb = async () => {
     } catch (error: any) {
         throw new Error(`Failed to connect to database: ${error.message || error}`);
     }
+};
+
+export const closeAllDb = async () => {
+    try {
+        await closeLocalDb();
+    } catch (error: any) {
+        throw new Error(`Failed to close database: ${error.message || error}`);
+    }
+};
+
+export const connectRedis = async () => {
+    try {
+        await startRedis();
+    } catch (error: any) {
+        throw new Error(`Failed to connect to redis: ${error.message || error}`);
+    }
+};
+
+export const closeRedisConnection = async () => {
+    try {
+        await closeRedis();
+    } catch (error: any) {
+        throw new Error(`Failed to close to redis: ${error.message || error}`);
+    }
+};
+
+export { startAllQueues, closeAllQueues };
+export { startAllWorkers, closeAllWorkers };
+
+export const closeAllQueuesAndWorkers = async () => {
+    await closeAllWorkers();
+    await closeAllQueues();
 };

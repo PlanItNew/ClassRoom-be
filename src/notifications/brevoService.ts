@@ -55,15 +55,22 @@ class BrevoService {
             }
 
             const rawHtml = this.loadTemplate(emailType);
+            const currentTime = new Date().toLocaleString();
             const params: Record<string, string | undefined> = {
                 name: toName,
                 otp: otp,
                 validity_minutes: `${appConfig.time_window} seconds`,
-                signup_time: new Date().toLocaleString(),
+                signup_time: currentTime,
+                signin_time: currentTime,
+                request_time: currentTime,
                 device_info: userAgent || "unknown device",
                 ip_address: ipAddress || "unknown",
             };
             const htmlContent = this.interpolateTemplate(rawHtml, params);
+
+            const subject = emailType === EmailTemplateType.SIGNUP_OTP
+                ? "Welcome to Edu Platform - Email Verification"
+                : "Edu Platform - Sign-in Verification Code";
 
             await this.brevoClient.transactionalEmails.sendTransacEmail({
                 htmlContent,
@@ -72,7 +79,7 @@ class BrevoService {
                     name: appConfig.brevo_sender_name
                 },
                 to: [{ email: toEmail, name: toName }],
-                subject: "OTP Verification"
+                subject
             });
         } catch (error: any) {
             console.error(`[BrevoService] Failed to send ${emailType} email to ${toEmail}:`, error.message);
