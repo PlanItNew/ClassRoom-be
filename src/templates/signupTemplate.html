@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Edu Platform - Email Verification</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+        style="background-color: #f1f5f9; padding: 40px 10px;">
+        <tr>
+            <td align="center">
+                <!-- Container -->
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+                    style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+
+                    <!-- Header Accent Banner (Emerald & Indigo Welcome Accent) -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #6366f1 100%); height: 8px;">
+                        </td>
+                    </tr>
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 36px 40px 20px 40px; text-align: center;">
+                            <div
+                                style="display: inline-block; background-color: #ecfdf5; border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; border: 1px solid #a7f3d0;">
+                                <span
+                                    style="font-size: 24px; font-weight: 800; color: #059669; letter-spacing: -0.5px;">🎓
+                                    Edu Platform</span>
+                            </div>
+                            <h1
+                                style="margin: 0; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;">
+                                Welcome to Edu Platform!</h1>
+                            <p style="margin: 6px 0 0 0; font-size: 14px; color: #64748b;">Verify your email address to
+                                complete registration</p>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 0 40px 30px 40px;">
+                            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #475569;">
+                                Hello <strong>{{ params.name }}</strong>,
+                            </p>
+                            <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; color: #475569;">
+                                We're excited to have you join <strong>Edu Platform</strong>! To complete your account
+                                registration and start exploring your learning workspace, please verify your email
+                                address using the code below:
+                            </p>
+
+                            <!-- OTP Box -->
+                            <div
+                                style="background-color: #f0fdf4; border: 2px dashed #86efac; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
+                                <span
+                                    style="display: block; font-size: 13px; font-weight: 700; text-transform: uppercase; color: #166534; letter-spacing: 1px; margin-bottom: 8px;">Registration
+                                    Verification Code</span>
+                                <span
+                                    style="font-family: 'Courier New', Courier, monospace; font-size: 40px; font-weight: 800; color: #059669; letter-spacing: 10px; display: inline-block; margin: 4px 0;">{{
+                                    params.otp }}</span>
+                                <span
+                                    style="display: block; font-size: 13px; color: #dc2626; font-weight: 600; margin-top: 8px;">⏱️
+                                    Code expires in {{ params.validity_minutes }} minutes</span>
+                            </div>
+
+                            <!-- Registration Details Box -->
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+                                style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 24px; border-left: 4px solid #10b981;">
+                                <tr>
+                                    <td>
+                                        <p
+                                            style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600; color: #334155;">
+                                            Signup Details:</p>
+                                        <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b;">🕒
+                                            <strong>Requested At:</strong> {{ params.signup_time }}</p>
+                                        <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b;">💻
+                                            <strong>Device:</strong> {{ params.device_info }}</p>
+                                        <p style="margin: 0; font-size: 12px; color: #64748b;">🌐 <strong>IP
+                                                Address:</strong> {{ params.ip_address }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Security & Help Notice -->
+                            <p
+                                style="margin: 0; font-size: 13px; line-height: 1.5; color: #94a3b8; text-align: center;">
+                                If you did not sign up for an Edu Platform account, you can safely ignore this email. No
+                                account will be created without verification.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background-color: #f8fafc; padding: 24px 40px; border-top: 1px solid #e2e8f0; text-align: center;">
+                            <p style="margin: 0 0 8px 0; font-size: 12px; color: #94a3b8;">
+                                © 2026 Edu Platform Inc. Empowering Education Everywhere.
+                            </p>
+                            <p style="margin: 0; font-size: 12px; color: #94a3b8;">
+                                Questions? Contact <a href="mailto:support@eduplatform.com"
+                                    style="color: #059669; text-decoration: none;">support@eduplatform.com</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
