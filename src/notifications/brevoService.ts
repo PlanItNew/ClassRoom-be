@@ -43,8 +43,22 @@ class BrevoService {
      * Brevo only renders params for stored templateId emails — NOT for raw htmlContent.
      * We must substitute locally before sending.
      */
+
+    private escapeHtml(str: string = ""): string {
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
     private interpolateTemplate(html: string, params: Record<string, string | undefined>): string {
-        return html.replace(/{{\s*params\.(\w+)\s*}}/g, (_, key) => params[key] ?? "");
+        return html.replace(/{{\s*params\.(\w+)\s*}}/g, (_, key) => {
+            const value = params[key] ?? "";
+            return this.escapeHtml(value);
+        });
     }
 
     public async sendEmail(
