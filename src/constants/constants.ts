@@ -1,4 +1,5 @@
 import path from "path";
+import { applicationConfig } from "../config/index.js";
 
 export const ENV_TOKENS_REQUIED = [
     "PORT",
@@ -26,4 +27,28 @@ export const verificationTypes = {
 
 export const bullMqQueues = {
     EMAIL: "email_brevo"
+}
+
+
+export const redisConstantKeys: any = {
+    TOTP: "totp:"
+}
+
+export const redisTTLs: any = {
+    TOTP: 60 * 3
+}
+
+export const otpCommonSetting: any = {
+    removeOnComplete: true,
+    removeOnFail: true,
+    attempts: applicationConfig.app.otp_max_attempts,
+    backoff: {
+        type: "exponential",
+        delay: 1000,
+    }
+}
+
+export const ErrorCodes: any = {
+    INVALID_OTP: 5432,
+    OTP_SWW: 5433,
 }

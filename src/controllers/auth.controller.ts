@@ -13,10 +13,12 @@ import { EmailTemplateType, type AuthenticatedRequest } from "../constants/types
 
 import { totpUtil } from "../utils/totp.class.js";
 import { getIp, getUserAgent, getUniqueId } from "../utils/common.utils.js";
-import { verificationTypes } from "../constants/constants.js";
+import { verificationTypes, otpCommonSetting, ErrorCodes } from "../constants/constants.js";
 
 // Queues 
 import { getEmailQueue } from "../queues/email.queue.js";
+import { applicationConfig } from "../config/index.js";
+import { error } from "console";
 
 export const registerUser = async (req: Request, res: Response) => {
     try {
@@ -92,10 +94,11 @@ export const registerUser = async (req: Request, res: Response) => {
                 template: EmailTemplateType.SIGNUP_OTP,
             },
             {
-                removeOnComplete: true,
-                removeOnFail: true,
+                jobId: getUniqueId(EmailTemplateType.SIGNUP_OTP, newUser.id),
+                ...otpCommonSetting
             }
         );
+
         // await brevoService.sendEmail(
         //     newUser.email,
         //     newUser.fullName,
@@ -110,7 +113,8 @@ export const registerUser = async (req: Request, res: Response) => {
             user: {
                 id: newUser.id,
                 verified: false,
-                verificationFor: verificationTypes.SIGNUP
+                verificationFor: verificationTypes.SIGNUP,
+                attemptsLeft: applicationConfig.app.otp_max_attempts,
             },
         });
     } catch (error: any) {
@@ -162,8 +166,8 @@ export const loginUser = async (req: Request, res: Response) => {
                 template: EmailTemplateType.SIGNIN_OTP,
             },
             {
-                removeOnComplete: true,
-                removeOnFail: true,
+                jobId: getUniqueId(EmailTemplateType.SIGNIN_OTP, user.id),
+                ...otpCommonSetting
             }
         );
 
@@ -172,7 +176,8 @@ export const loginUser = async (req: Request, res: Response) => {
             user: {
                 id: user.id,
                 verified: false,
-                verificationFor: verificationTypes.LOGIN
+                verificationFor: verificationTypes.LOGIN,
+                attemptsLeft: applicationConfig.app.otp_max_attempts,
             }
         });
 
@@ -237,8 +242,17 @@ export const verifyOTP = async (req: Request, res: Response) => {
         }
 
         const isOtpValid = await totpUtil.verifyOtp(userId, otp);
-        if (!isOtpValid) {
-            return res.status(401).json({ message: "Invalid OTP" });
+        if (!isOtpValid.valid) {
+            return res.status(401).json({
+                message: isOtpValid?.error ? `Something went wrong. Please try again.` : `Invalid OTP. Attempts left: ${isOtpValid.attemptsLeft}`,
+                user: {
+                    id: userId,
+                    verified: !isOtpValid.valid,
+                    verificationFor: verificationType,
+                    attemptsLeft: isOtpValid.attemptsLeft,
+                },
+                error: isOtpValid?.error
+            });
         }
 
         const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);

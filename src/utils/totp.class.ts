@@ -1,6 +1,11 @@
 import crypto from "crypto";
 import { TOTP, NobleCryptoPlugin, ScureBase32Plugin } from "otplib";
 import { appConfig } from "../config/app.config.js";
+import { getHash, putHash, putValue, containsKey, deleteKey } from "../redis/redis.api.js";
+import { makeRedisKey } from "./common.utils.js";
+import { applicationConfig } from "../config/index.js";
+import { error } from "console";
+import { ErrorCodes } from "../constants/constants.js";
 
 /**
  * Time block formula:
@@ -78,19 +83,29 @@ export class TimeWindowOTP {
     /**
      * Generates a 6-digit OTP using the combined secret.
      */
-    public async generateOtp(userSecret: string): Promise<string> {
+    public async generateOtp(userSecret: string): Promise<any> {
         if (!userSecret) {
             throw new Error("User secret or user ID is required to generate OTP");
         }
         const combinedSecret = this.getCombinedSecret(userSecret);
         const otpg = await this.totp.generate({ secret: combinedSecret });
-        return otpg;
+
+        const redisKey = makeRedisKey("TOTP", userSecret);
+        if (redisKey && !containsKey(redisKey)) {
+            await putHash(redisKey, {
+                attempts: 0,
+                maxAttemps: applicationConfig.app.otp_max_attempts,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            }, "TOTP");
+        }
+        return { code: otpg, redisKey: redisKey };
     }
 
     /**
      * Verifies the provided OTP against the configured time windows.
      */
-    public async verifyOtp(userSecret: string, token: string | number): Promise<boolean> {
+    public async verifyOtp(userSecret: string, token: string | number): Promise<any> {
         const tokenStr = String(token ?? "").trim();
         if (!userSecret || !tokenStr || !/^\d{6}$/.test(tokenStr)) {
             return false;
@@ -106,14 +121,36 @@ export class TimeWindowOTP {
             futureSec = Math.min(futureSec, 2900);
         }
 
+        const cachedData: any = await getHash(makeRedisKey("TOTP", userSecret));
+        if (!cachedData) {
+            throw new Error("OTP verification failed");
+        }
+
         try {
             const result = await this.totp.verify(tokenStr, {
                 secret: combinedSecret,
                 epochTolerance: [pastSec, futureSec],
             });
-            return result.valid;
+            if (!result.valid) {
+                await putHash(makeRedisKey("TOTP", userSecret), {
+                    attempts: (cachedData?.attempts || 0) + 1,
+                    maxAttemps: applicationConfig.app.otp_max_attempts,
+                    createdAt: cachedData?.createdAt,
+                    updatedAt: new Date(),
+                }, "TOTP");
+            }
+            return {
+                valid: result.valid,
+                attemptsLeft: cachedData?.maxAttemps - (cachedData?.attempts || 0),
+                ...(result.valid ? {} : { error: ErrorCodes.INVALID_OTP })
+            };
         } catch (error: any) {
-            return false;
+            await deleteKey(makeRedisKey("TOTP", userSecret), "TOTP");
+            return {
+                valid: false,
+                attemptsLeft: 0,
+                error: ErrorCodes.SOMETHING_WENT_WRONG,
+            };
         }
     }
 

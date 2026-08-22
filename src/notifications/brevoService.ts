@@ -8,12 +8,15 @@ import fs from "fs";
 
 class BrevoService {
     private brevoClient: BrevoClient;
-    private static instance: BrevoService
+    private static instance: BrevoService;
+    private templateCache: Map<string, string>;
 
     private constructor() {
         this.brevoClient = new BrevoClient({
             apiKey: appConfig.brevo_api_key,
         });
+        // To improve performance. 
+        this.templateCache = new Map<string, string>();
     }
 
     public static getInstance(): BrevoService {
@@ -25,11 +28,14 @@ class BrevoService {
 
 
     private loadTemplate(key: string): string {
-        const path = templateMap[key as keyof typeof templateMap];
-        if (!path) {
-            throw new Error(`Template not found for key: ${key}`);
+        if (!this.templateCache.has(key)) {
+            const path = templateMap[key as keyof typeof templateMap];
+            if (!path) {
+                throw new Error(`Template not found for key: ${key}`);
+            }
+            this.templateCache.set(key, fs.readFileSync(path, "utf-8"));
         }
-        return fs.readFileSync(path, "utf-8");
+        return this.templateCache.get(key)!;
     }
 
     /**
@@ -56,10 +62,11 @@ class BrevoService {
 
             const rawHtml = this.loadTemplate(emailType);
             const currentTime = new Date().toLocaleString();
+            const validityMinutes = Math.max(1, Math.round(appConfig.time_window / 60));
             const params: Record<string, string | undefined> = {
                 name: toName,
                 otp: otp,
-                validity_minutes: `${appConfig.time_window} seconds`,
+                validity_minutes: `${validityMinutes} minutes`,
                 signup_time: currentTime,
                 signin_time: currentTime,
                 request_time: currentTime,
