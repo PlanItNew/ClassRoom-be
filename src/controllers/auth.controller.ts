@@ -12,13 +12,19 @@ import {
 import { EmailTemplateType, type AuthenticatedRequest } from "../constants/types.js";
 
 import { totpUtil } from "../utils/totp.class.js";
-import brevoService from "../notifications/brevoService.js";
-import { getIp, getUserAgent } from "../utils/common.utils.js";
-import { verificationTypes } from "../constants/constants.js";
+import { getIp, getUserAgent, getUniqueId } from "../utils/common.utils.js";
+import { verificationTypes, otpCommonSetting, ErrorCodes } from "../constants/constants.js";
+
+// Queues 
+import { getEmailQueue } from "../queues/email.queue.js";
+import { applicationConfig } from "../config/index.js";
+import { error } from "console";
 
 export const registerUser = async (req: Request, res: Response) => {
     try {
         const db = getPostgresDb();
+        const emailQueue = getEmailQueue();
+
         const { userName, email, password, fullName, role } = req.body;
 
         if (!userName || !email || !password || !fullName || !role) {
@@ -74,24 +80,41 @@ export const registerUser = async (req: Request, res: Response) => {
         // const { accessToken } = await issueTokensAndSetCookie(newUser.id, res);
 
         // Generate OTP 
-        const otp = await totpUtil.generateOtp(newUser.id);
+        const { code: otp } = await totpUtil.generateOtp(newUser.id);
 
         // Currently as sycn service later upgraded to async using bull mq
-        await brevoService.sendEmail(
-            newUser.email,
-            newUser.fullName,
-            EmailTemplateType.SIGNUP_OTP,
-            otp,
-            getUserAgent(req),
-            getIp(req)
+        await emailQueue.add(
+            getUniqueId(EmailTemplateType.SIGNUP_OTP, newUser.id),
+            {
+                to: newUser.email,
+                fullName: newUser.fullName,
+                otp,
+                userAgent: getUserAgent(req),
+                ip: getIp(req),
+                template: EmailTemplateType.SIGNUP_OTP,
+            },
+            {
+                jobId: getUniqueId(EmailTemplateType.SIGNUP_OTP, newUser.id),
+                ...otpCommonSetting
+            }
         );
+
+        // await brevoService.sendEmail(
+        //     newUser.email,
+        //     newUser.fullName,
+        //     EmailTemplateType.SIGNUP_OTP,
+        //     otp,
+        //     getUserAgent(req),
+        //     getIp(req)
+        // );
 
         return res.status(201).json({
             message: "User registered successfully",
             user: {
                 id: newUser.id,
                 verified: false,
-                verificationFor: "sign-up"
+                verificationFor: verificationTypes.SIGNUP,
+                attemptsLeft: applicationConfig.app.otp_max_attempts,
             },
         });
     } catch (error: any) {
@@ -103,6 +126,8 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
     try {
         const db = getPostgresDb();
+        const emailQueue = getEmailQueue();
+
         const { userName, password, email } = req.body;
 
         if ((!userName && !email) || !password) {
@@ -125,19 +150,37 @@ export const loginUser = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Invalid username or password" });
         }
 
-        const { accessToken } = await issueTokensAndSetCookie(user.id, res);
+        // const { accessToken } = await issueTokensAndSetCookie(user.id, res);
+
+        // Generate OTP for login verification
+        const { code: otp } = await totpUtil.generateOtp(user.id);
+
+        await emailQueue.add(
+            getUniqueId(EmailTemplateType.SIGNIN_OTP, user.id),
+            {
+                to: user.email,
+                fullName: user.fullName,
+                otp,
+                userAgent: getUserAgent(req),
+                ip: getIp(req),
+                template: EmailTemplateType.SIGNIN_OTP,
+            },
+            {
+                jobId: getUniqueId(EmailTemplateType.SIGNIN_OTP, user.id),
+                ...otpCommonSetting
+            }
+        );
 
         return res.status(200).json({
-            message: "Login successful",
-            accessToken,
+            message: "Pending verification",
             user: {
                 id: user.id,
-                userName: user.userName,
-                email: user.email,
-                fullName: user.fullName,
-                role: user.role,
-            },
+                verified: false,
+                verificationFor: verificationTypes.LOGIN,
+                attemptsLeft: applicationConfig.app.otp_max_attempts,
+            }
         });
+
     } catch (error: any) {
         console.error("Error in loginUser:", error);
         return res.status(500).json({ message: "Internal server error" });
@@ -190,8 +233,8 @@ export const verifyOTP = async (req: Request, res: Response) => {
         const db = getPostgresDb();
         const { userId, otp, verificationType } = req.body;
 
-        if (verificationType !== "sign-up") {
-            return res.status(400).json({ message: "Invalid verfication." });
+        if (verificationType !== verificationTypes.SIGNUP && verificationType !== verificationTypes.LOGIN) {
+            return res.status(400).json({ message: "Invalid verification." });
         }
 
         if (!userId || !otp) {
@@ -199,8 +242,17 @@ export const verifyOTP = async (req: Request, res: Response) => {
         }
 
         const isOtpValid = await totpUtil.verifyOtp(userId, otp);
-        if (!isOtpValid) {
-            return res.status(401).json({ message: "Invalid OTP" });
+        if (!isOtpValid.valid) {
+            return res.status(401).json({
+                message: isOtpValid?.error ? `Something went wrong. Please try again.` : `Invalid OTP. Attempts left: ${isOtpValid.attemptsLeft}`,
+                user: {
+                    id: userId,
+                    verified: !isOtpValid.valid,
+                    verificationFor: verificationType,
+                    attemptsLeft: isOtpValid.attemptsLeft,
+                },
+                error: isOtpValid?.error
+            });
         }
 
         const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);

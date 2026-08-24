@@ -5,16 +5,30 @@ export interface DockerComposeOptions {
     cwd?: string;
     config?: string;
     log?: boolean;
+    resetVolumes?: boolean;
 }
 
 export async function startDockerContainer(options: DockerComposeOptions = {}) {
     const {
         cwd = process.cwd(),
         config = 'docker.yml',
-        log = true
+        log = true,
+        resetVolumes = false
     } = options;
 
     try {
+
+        if (resetVolumes) {
+            console.log(`Resetting Postgres/Docker volumes using config "${config}"...`);
+            await compose.down({
+                cwd: path.resolve(cwd),
+                config,
+                log,
+                commandOptions: ['-v']
+            });
+            return;
+        }
+
         console.log(`Starting Postgres/Docker container using config "${config}"...`);
 
         await compose.upAll({

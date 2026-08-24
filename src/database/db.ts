@@ -5,8 +5,11 @@ import { sql } from 'drizzle-orm';
 import { applicationConfig } from "../config/index.js";
 import { startDockerContainer } from "../utils/docker.utils.js";
 
+import { Redis } from 'ioredis';
+
 let localPostgresDb: any;
 let pgPool: pg.Pool | null = null;
+let redisClient: Redis | null = null;
 
 export const startLocalDb = async () => {
     // 1. Ensure Docker container is running
@@ -82,3 +85,37 @@ export const getPostgresDb = () => {
     }
     return localPostgresDb;
 };
+
+
+export const startRedis = async () => {
+    const { host, port, password } = applicationConfig.redis;
+
+    redisClient = new Redis({
+        host,
+        port,
+        password,
+    });
+
+    try {
+        await redisClient.ping();
+        console.log("Connected to Redis");
+        return redisClient;
+    } catch (error: any) {
+        console.error("Failed to connect to Redis:", error.message || error);
+        throw error;
+    }
+}
+
+export const closeRedis = async () => {
+    if (redisClient) {
+        await redisClient.quit().then(res => console.log("Redis client closed successfully")).catch((e) => {
+            console.error("Failed to close Redis client:", e.message || e)
+        });
+        redisClient = null;
+    }
+}
+
+export const getRedis = () => {
+    if (redisClient) return redisClient;
+    throw new Error("Redis not initialized");
+}

@@ -1,4 +1,5 @@
 import ms, { type StringValue } from "ms";
+import { redisConstantKeys } from "../constants/constants.js";
 
 export const getInMilliSec = (timePeriod: StringValue): number => {
     if (!timePeriod) {
@@ -23,4 +24,14 @@ export const getIp = (req: any) => {
 
 export const getUserAgent = (req: any) => {
     return req.headers['X-Device-Info'] || req.headers['user-agent'];
+}
+
+
+export const getUniqueId = (type: string, userId: string) => {
+    return userId + ":" + type + ":" + Math.random().toString(36).substring(2, 15);
+}
+
+
+export const makeRedisKey = (type: string, userId: string = "") => {
+    return redisConstantKeys[type] + userId;
 }
