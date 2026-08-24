@@ -91,7 +91,7 @@ export class TimeWindowOTP {
         const otpg = await this.totp.generate({ secret: combinedSecret });
 
         const redisKey = makeRedisKey("TOTP", userSecret);
-        if (redisKey && !containsKey(redisKey)) {
+        if (redisKey && !(await containsKey(redisKey))) {
             await putHash(redisKey, {
                 attempts: 0,
                 maxAttemps: applicationConfig.app.otp_max_attempts,
@@ -149,7 +149,7 @@ export class TimeWindowOTP {
             return {
                 valid: false,
                 attemptsLeft: 0,
-                error: ErrorCodes.SOMETHING_WENT_WRONG,
+                error: ErrorCodes.OTP_SWW,
             };
         }
     }

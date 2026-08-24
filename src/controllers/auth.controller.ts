@@ -80,7 +80,7 @@ export const registerUser = async (req: Request, res: Response) => {
         // const { accessToken } = await issueTokensAndSetCookie(newUser.id, res);
 
         // Generate OTP 
-        const otp = await totpUtil.generateOtp(newUser.id);
+        const { code: otp } = await totpUtil.generateOtp(newUser.id);
 
         // Currently as sycn service later upgraded to async using bull mq
         await emailQueue.add(
