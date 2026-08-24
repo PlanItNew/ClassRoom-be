@@ -153,7 +153,7 @@ export const loginUser = async (req: Request, res: Response) => {
         // const { accessToken } = await issueTokensAndSetCookie(user.id, res);
 
         // Generate OTP for login verification
-        const otp = await totpUtil.generateOtp(user.id);
+        const { code: otp } = await totpUtil.generateOtp(user.id);
 
         await emailQueue.add(
             getUniqueId(EmailTemplateType.SIGNIN_OTP, user.id),
