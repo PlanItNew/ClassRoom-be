@@ -234,11 +234,11 @@ export const verifyOTP = async (req: Request, res: Response) => {
         const { userId, otp, verificationType } = req.body;
 
         if (verificationType !== verificationTypes.SIGNUP && verificationType !== verificationTypes.LOGIN) {
-            return res.status(400).json({ message: "Invalid verification." });
+            return res.status(400).json({ message: "Invalid request." });
         }
 
         if (!userId || !otp) {
-            return res.status(400).json({ message: "User ID and OTP are required" });
+            return res.status(400).json({ message: "Invalid request." });
         }
 
         const isOtpValid = await totpUtil.verifyOtp(userId, otp);
