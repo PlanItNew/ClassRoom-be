@@ -1,5 +1,6 @@
 import { getRedis } from "../database/db.js";
 import { redisTTLs } from "../constants/constants.js";
+import { makeRedisKey } from "../utils/common.utils.js";
 
 
 export const putValue = async (key: string, value: any, ttlType: string) => {
@@ -44,4 +45,14 @@ export const deleteKey = async (key: string, ttlType?: string) => {
 
 export const containsKey = async (key: string) => {
     return await getRedis().exists(key);
+}
+
+
+export const bulkPustHash = async (data: any[], keyName: string, key: string, ttlType: string) => {
+    if (!data || typeof data !== "object") return false;
+    data.map(async (item: any) => {
+        const redisKey = makeRedisKey(keyName, item[key]);
+        await putHash(redisKey, item, ttlType);
+    });
+    return true;
 }

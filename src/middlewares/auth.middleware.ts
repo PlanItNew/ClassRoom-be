@@ -69,7 +69,7 @@ export const authenticateToken = async (
     }
 };
 
-export const requireRole = (role: "TEACHER" | "STUDENT") => {
+export const authorized = (role: "TEACHER" | "STUDENT") => {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         if (!req.user || req.user.role !== role) {
             return res.status(403).json({ message: "Access denied: Unauthorized role." });
