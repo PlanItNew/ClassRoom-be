@@ -33,8 +33,9 @@ export const getUniqueId = (type: string, userId: string) => {
 }
 
 
-export const makeRedisKey = (type: string, userId: string = "") => {
-    return redisConstantKeys[type] + userId;
+export const makeRedisKey = (type: string, id: string = "") => {
+    const prefix = redisConstantKeys[type] || (type.endsWith(":") ? type : type + ":");
+    return prefix + id;
 }
 
 

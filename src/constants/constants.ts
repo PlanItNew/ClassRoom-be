@@ -31,7 +31,9 @@ export const bullMqQueues = {
 
 
 export const redisConstantKeys: any = {
-    TOTP: "totp:"
+    TOTP: "totp:",
+    CLASSROOM: "classroom:",
+    CLASSROOM_STUDENTS: "classroom:students:"
 }
 
 export const redisTTLs: any = {

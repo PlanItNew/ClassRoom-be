@@ -56,3 +56,14 @@ export const bulkPustHash = async (data: any[], keyName: string, key: string, tt
     });
     return true;
 }
+
+export const bulkPutValue = async (data: any[], type: string, keyProperty: string, ttlType: string) => {
+    if (!data || !Array.isArray(data)) return false;
+    for (const item of data) {
+        if (item && item[keyProperty]) {
+            const redisKey = makeRedisKey(type, item[keyProperty]);
+            await putValue(redisKey, item, ttlType);
+        }
+    }
+    return true;
+};
