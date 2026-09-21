@@ -50,9 +50,16 @@ export const classrooms = pgTable('classrooms', {
     subjectId: uuid('subject_id')
         .references(() => subjects.id, { onDelete: 'set null' }),
     name: varchar('name', { length: 255 }).notNull(),
+    subject: varchar('subject', { length: 255 }),
+    section: varchar('section', { length: 100 }),
+    room: varchar('room', { length: 100 }),
     purpose: text('purpose'),
+    description: text('description'),
+    themeColor: varchar('theme_color', { length: 50 }).default('#1d4ed8'),
     joinCode: varchar('join_code', { length: 15 }).unique(),
+    isArchived: boolean('is_archived').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 },
     (table) => ({
         teacherIdx: index('idx_classrooms_teacher').on(table.teacherId),
@@ -69,6 +76,7 @@ export const classroomStudents = pgTable(
             .notNull()
             .references(() => users.id, { onDelete: 'cascade' }),
         status: joinStatusEnum('status').default('PENDING').notNull(),
+        isNotificationRead: boolean('is_notification_read').default(false).notNull(),
         requestedAt: timestamp('requested_at', { withTimezone: true }).defaultNow().notNull(),
         resolvedAt: timestamp('resolved_at', { withTimezone: true }),
     },

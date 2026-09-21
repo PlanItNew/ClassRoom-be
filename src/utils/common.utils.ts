@@ -1,4 +1,5 @@
 import ms, { type StringValue } from "ms";
+import crypto from "crypto";
 import { redisConstantKeys } from "../constants/constants.js";
 
 export const getInMilliSec = (timePeriod: StringValue): number => {
@@ -32,6 +33,18 @@ export const getUniqueId = (type: string, userId: string) => {
 }
 
 
-export const makeRedisKey = (type: string, userId: string = "") => {
-    return redisConstantKeys[type] + userId;
+export const makeRedisKey = (type: string, id: string = "") => {
+    const prefix = redisConstantKeys[type] || (type.endsWith(":") ? type : type + ":");
+    return prefix + id;
+}
+
+
+export const generateUniqueId = (id: number | string, name: string, maxLen: number = 8) => {
+    const combinedString = id.toString() + " - " + name.trim();
+    const hashed = crypto
+        .createHash('sha256')
+        .update(combinedString, 'utf-8')
+        .digest('hex');
+    return hashed.substring(0, maxLen);
+
 }

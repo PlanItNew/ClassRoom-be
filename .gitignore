@@ -2,3 +2,5 @@ node_modules
 .env
 .agents/
 .claude/
+docs/
+tests/

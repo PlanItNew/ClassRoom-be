@@ -31,11 +31,15 @@ export const bullMqQueues = {
 
 
 export const redisConstantKeys: any = {
-    TOTP: "totp:"
+    TOTP: "totp:",
+    CLASSROOM: "classroom:",
+    CLASSROOM_STUDENTS: "classroom:students:"
 }
 
 export const redisTTLs: any = {
-    TOTP: 60 * 3
+    TOTP: 60 * 3,
+    CLASSROOM: 60 * 60,
+    CLASSROOM_STUDENTS: 60 * 60 * 2
 }
 
 export const otpCommonSetting: any = {
