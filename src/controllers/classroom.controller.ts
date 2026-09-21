@@ -105,6 +105,7 @@ export const getClassrooms = async (req: AuthenticatedRequest, res: Response) =>
             data: data,
         });
     } catch (error: any) {
+        console.error("[getClassrooms] Error:", error);
         return res.status(500).json({
             message: "Error getting classrooms",
             error: error.message,
@@ -181,6 +182,7 @@ export const getClassroomById = async (req: AuthenticatedRequest, res: Response)
             data: fullData,
         });
     } catch (error: any) {
+        console.error("[getClassroomById] Error:", error);
         return res.status(500).json({
             message: "Error fetching classroom",
             error: error.message,
@@ -232,6 +234,7 @@ export const updateClassroom = async (req: AuthenticatedRequest, res: Response) 
             data: updated[0],
         });
     } catch (error: any) {
+        console.error("[updateClassroom] Error:", error);
         return res.status(500).json({
             message: "Error updating classroom",
             error: error.message,
@@ -324,6 +327,7 @@ export const getClassRoomsByStudent = async (req: AuthenticatedRequest, res: Res
             data: combined,
         });
     } catch (error: any) {
+        console.error("[getClassRoomsByStudent] Error:", error);
         return res.status(500).json({
             message: "Error fetching student classrooms",
             error: error.message,
@@ -381,6 +385,7 @@ export const joinClassroom = async (req: AuthenticatedRequest, res: Response) =>
             data: classroomStudent[0],
         });
     } catch (error: any) {
+        console.error("[joinClassroom] Error:", error);
         return res.status(500).json({
             message: "Error joining classroom",
             error: error.message,
@@ -400,7 +405,7 @@ export const resolveRequest = async (req: AuthenticatedRequest, res: Response) =
         }
 
         const classroom = await db.select().from(classrooms).where(eq(classrooms.id, targetClassroomId));
-        if (!classroom && classroom.length === 0) {
+        if (!classroom || classroom.length === 0) {
             return res.status(404).json({ "message": "Classroom not found" });
         }
 
@@ -445,6 +450,7 @@ export const resolveRequest = async (req: AuthenticatedRequest, res: Response) =
             message: `Request ${approvalStatus ? "approved" : "rejected"} successfully.`,
         });
     } catch (error: any) {
+        console.error("[resolveRequest] Error:", error);
         return res.status(500).json({
             message: "Error resolving request",
             error: error.message,
@@ -483,6 +489,7 @@ export const bulkApproval = async (req: AuthenticatedRequest, res: Response) => 
             message: `All requests ${approvalStatus ? "approved" : "rejected"} successfully.`,
         });
     } catch (error: any) {
+        console.error("[bulkApproval] Error:", error);
         return res.status(500).json({
             message: "Error bulk resolving requests",
             error: error.message,
@@ -525,6 +532,7 @@ export const getPendingRequests = async (req: AuthenticatedRequest, res: Respons
             data: data,
         });
     } catch (error: any) {
+        console.error("[getPendingRequests] Error:", error);
         return res.status(500).json({
             message: "Error fetching pending requests",
             error: error.message,
@@ -589,6 +597,7 @@ export const getStudentsInClassroom = async (req: AuthenticatedRequest, res: Res
             totalCount: data.length,
         });
     } catch (error: any) {
+        console.error("[getStudentsInClassroom] Error:", error);
         return res.status(500).json({
             message: "Error fetching classroom students",
             error: error.message,
@@ -638,6 +647,7 @@ export const getStudentNotifications = async (req: AuthenticatedRequest, res: Re
             },
         });
     } catch (error: any) {
+        console.error("[getStudentNotifications] Error:", error);
         return res.status(500).json({
             message: "Error fetching notifications",
             error: error.message,
@@ -668,6 +678,7 @@ export const markNotificationAsRead = async (req: AuthenticatedRequest, res: Res
 
         return res.status(200).json({ message: "Notification marked as read" });
     } catch (error: any) {
+        console.error("[markNotificationAsRead] Error:", error);
         return res.status(500).json({
             message: "Error updating notification",
             error: error.message,
@@ -697,6 +708,7 @@ export const markAllNotificationsAsRead = async (req: AuthenticatedRequest, res:
 
         return res.status(200).json({ message: "All notifications marked as read" });
     } catch (error: any) {
+        console.error("[markAllNotificationsAsRead] Error:", error);
         return res.status(500).json({
             message: "Error updating notifications",
             error: error.message,
