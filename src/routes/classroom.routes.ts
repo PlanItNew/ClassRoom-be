@@ -29,7 +29,6 @@ router.put("/bulk-approval", authorized("TEACHER"), bulkApproval);
 // Student-specific routes
 router.post("/join", authorized("STUDENT"), joinClassroom);
 router.get("/student", authorized("STUDENT"), getClassRoomsByStudent);
-router.get("/classrooms-by-student", getClassRoomsByStudent);
 router.get("/notifications", authorized("STUDENT"), getStudentNotifications);
 router.patch("/notifications/read-all", authorized("STUDENT"), markAllNotificationsAsRead);
 router.patch("/notifications/:classroomId/read", authorized("STUDENT"), markNotificationAsRead);

@@ -18,9 +18,10 @@ export const createClassroom = async (req: AuthenticatedRequest, res: Response) 
             return res.status(400).json({ message: "Classroom name is required" });
         }
 
-        let foundUniqueCode = false;
+        const MAX_RETRIES = 10;
+        let attempts = 0;
         let createdClassroom: any;
-        while (!foundUniqueCode) {
+        while (attempts < MAX_RETRIES) {
             const classRoomJoinCode = generateUniqueId(teacherId || "", name, 8);
             const existsKey = await db.select().from(classrooms).where(eq(classrooms.joinCode, classRoomJoinCode));
             if (existsKey.length === 0) {
@@ -36,15 +37,18 @@ export const createClassroom = async (req: AuthenticatedRequest, res: Response) 
                     joinCode: classRoomJoinCode,
                 }).returning();
                 createdClassroom = inserted[0];
-                foundUniqueCode = true;
+                break;
             } else {
                 teacherId += randomInt(10001, 20000).toString();
             }
+            attempts++;
         }
 
         if (createdClassroom) {
             const redisKey = makeRedisKey("CLASSROOM", createdClassroom.id);
             await putValue(redisKey, createdClassroom, "CLASSROOM");
+        } else {
+            return res.json({ message: "Failed to generate unique join code. Please retry." }).status(500);
         }
 
         return res.status(201).json({
@@ -52,6 +56,7 @@ export const createClassroom = async (req: AuthenticatedRequest, res: Response) 
             data: createdClassroom,
         });
     } catch (error: any) {
+        console.error("[createClassroom] Error:", error);
         return res.status(500).json({
             message: "Error creating classroom",
             error: error.message,
@@ -90,11 +95,10 @@ export const getClassrooms = async (req: AuthenticatedRequest, res: Response) =>
             .groupBy(classrooms.id)
             .orderBy(desc(classrooms.createdAt));
 
-        for (const classroom of data) {
-            if (await containsKey(makeRedisKey("CLASSROOM", classroom.id))) continue;
+        Promise.all(data.map(async (classroom: any) => {
             const redisKey = makeRedisKey("CLASSROOM", classroom.id);
             await putValue(redisKey, classroom, "CLASSROOM");
-        }
+        })).catch(err => console.error("Cache warming failed:", err));;
 
         return res.status(200).json({
             message: "Classrooms fetched successfully",
@@ -117,16 +121,16 @@ export const getClassroomById = async (req: AuthenticatedRequest, res: Response)
             return res.status(400).json({ message: "Classroom ID is required" });
         }
 
-        const redisKey = makeRedisKey("CLASSROOM", classroomId);
-        if (await containsKey(redisKey)) {
-            const cached = await getValue(redisKey);
-            if (cached) {
-                return res.status(200).json({
-                    message: "Classroom fetched successfully",
-                    data: cached,
-                });
-            }
-        }
+        // const redisKey = makeRedisKey("CLASSROOM", classroomId);
+        // if (await containsKey(redisKey)) {
+        //     const cached = await getValue(redisKey);
+        //     if (cached) {
+        //         return res.status(200).json({
+        //             message: "Classroom fetched successfully",
+        //             data: cached,
+        //         });
+        //     }
+        // }
 
         const results = await db
             .select({
@@ -170,7 +174,7 @@ export const getClassroomById = async (req: AuthenticatedRequest, res: Response)
             pendingCount: counts[0]?.pendingCount || 0
         };
 
-        await putValue(redisKey, fullData, "CLASSROOM");
+        // await putValue(redisKey, fullData, "CLASSROOM");
 
         return res.status(200).json({
             message: "Classroom fetched successfully",
@@ -393,6 +397,15 @@ export const resolveRequest = async (req: AuthenticatedRequest, res: Response) =
 
         if (!targetClassroomId || !studentId) {
             return res.status(400).json({ message: "Classroom ID and Student ID are required" });
+        }
+
+        const classroom = await db.select().from(classrooms).where(eq(classrooms.id, targetClassroomId));
+        if (!classroom && classroom.length === 0) {
+            return res.status(404).json({ "message": "Classroom not found" });
+        }
+
+        if (classroom[0].teacherId !== req?.user?.id) {
+            return res.status(403).json({ message: "You are not authorized to manage this classroom" });
         }
 
         const existingRequest = await db

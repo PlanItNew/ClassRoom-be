@@ -48,15 +48,6 @@ export const containsKey = async (key: string) => {
 }
 
 
-export const bulkPustHash = async (data: any[], keyName: string, key: string, ttlType: string) => {
-    if (!data || typeof data !== "object") return false;
-    data.map(async (item: any) => {
-        const redisKey = makeRedisKey(keyName, item[key]);
-        await putHash(redisKey, item, ttlType);
-    });
-    return true;
-}
-
 export const bulkPutValue = async (data: any[], type: string, keyProperty: string, ttlType: string) => {
     if (!data || !Array.isArray(data)) return false;
     for (const item of data) {
