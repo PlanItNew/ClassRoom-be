@@ -48,3 +48,14 @@ export const generateUniqueId = (id: number | string, name: string, maxLen: numb
     return hashed.substring(0, maxLen);
 
 }
+
+export const logger = (type: String, source: String, message: any) => {
+    type = type.toLowerCase();
+    if (type == "info") {
+        console.log(`[${type}]:: ${source}:: ${message}`)
+    } else if (type == "error") {
+        console.error(`[${type}]:: ${source}:: ${message}`)
+    } else {
+        console.warn(`[${type}]:: ${source}:: ${message}`)
+    }
+}

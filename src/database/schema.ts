@@ -11,7 +11,9 @@ import {
     integer,
     primaryKey,
     unique,
-    index
+    index,
+    bigint,
+
 } from 'drizzle-orm/pg-core';
 
 
@@ -19,6 +21,8 @@ import {
 export const userRoleEnum = pgEnum('user_role', ['TEACHER', 'STUDENT']);
 export const joinStatusEnum = pgEnum('join_status', ['PENDING', 'APPROVED', 'REJECTED']);
 export const attemptStatusEnum = pgEnum('attempt_status', ['IN_PROGRESS', 'SUBMITTED', 'ABANDONED']);
+export const postStatusEnum = pgEnum('post_status', ['DRAFT', 'PUBLISHED', 'DELETED']);
+export const attachmentStatusEnum = pgEnum('attachment_status', ['PENDING_UPLOAD', 'UPLOADED', 'FAILED', 'DELETED']);
 
 
 // Tables
@@ -191,3 +195,52 @@ export const refreshTokens = pgTable('refresh_tokens', {
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });
+
+
+export const posts = pgTable('posts', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    classroomId: uuid('classroom_id')
+        .notNull()
+        .references(() => classrooms.id, { onDelete: 'cascade' }),
+    teacherId: uuid('teacher_id')
+        .notNull()
+        .references(() => users.id, { onDelete: 'cascade' }),
+    content: text('content'),
+    status: postStatusEnum('status').default('DRAFT').notNull(),
+    version: integer('version').default(1).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+},
+    (table) => ({
+        classroomPublishedIdx: index('idx_posts_classroom_published').on(table.classroomId, table.publishedAt),
+        classroomStatusIdx: index('idx_posts_classroom_status').on(table.classroomId, table.status),
+        teacherIdx: index('idx_posts_teacher').on(table.teacherId),
+    })
+);
+
+export const postAttachments = pgTable('post_attachments', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    postId: uuid('post_id')
+        .notNull()
+        .references(() => posts.id, { onDelete: 'cascade' }),
+    s3Key: text('s3_key').notNull().unique(),
+    originalFilename: text('original_filename').notNull(),
+    mimeType: text('mime_type'),
+    sizeBytes: bigint('size_bytes', { mode: 'number' }),
+    status: attachmentStatusEnum('status').default('PENDING_UPLOAD').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    uploadedAt: timestamp('uploaded_at', { withTimezone: true }),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+},
+    (table) => ({
+        postIdx: index('idx_post_attachments_post').on(table.postId),
+        postStatusIdx: index('idx_post_attachments_post_status').on(table.postId, table.status),
+    })
+);
+
+// Backward-compatible exports
+export const classroomPost = posts;
+export const attachments = postAttachments;
+

@@ -43,6 +43,21 @@ export const deleteKey = async (key: string, ttlType?: string) => {
 };
 
 
+export const deleteKeysByPattern = async (pattern: string) => {
+    try {
+        const redis = getRedis();
+        const keys = await redis.keys(pattern);
+        if (keys && keys.length > 0) {
+            return await redis.del(...keys);
+        }
+        return 0;
+    } catch (err) {
+        console.error(`Error deleting keys by pattern ${pattern}:`, err);
+        return 0;
+    }
+};
+
+
 export const containsKey = async (key: string) => {
     return await getRedis().exists(key);
 }

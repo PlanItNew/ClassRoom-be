@@ -15,13 +15,15 @@
   "type": "module",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "tsx --test tests/post.test.ts",
     "dev": "nodemon --watch . --ext ts --exec tsx index.ts",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:generate": "drizzle-kit generate:pg",
+    "db:migrate": "drizzle-kit migrate:pg",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1147.0",
+    "@aws-sdk/s3-request-presigner": "^3.1147.0",
     "@getbrevo/brevo": "^6.0.2",
     "@neondatabase/serverless": "^1.1.0",
     "bcrypt": "^6.0.0",

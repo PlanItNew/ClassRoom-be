@@ -26,20 +26,23 @@ export const verificationTypes = {
 
 
 export const bullMqQueues = {
-    EMAIL: "email_brevo"
+    EMAIL: "email_brevo",
+    S3_CLEANUP: "s3_cleanup",
 }
 
 
 export const redisConstantKeys: any = {
     TOTP: "totp:",
     CLASSROOM: "classroom:",
-    CLASSROOM_STUDENTS: "classroom:students:"
+    CLASSROOM_STUDENTS: "classroom:students:",
+    CLASSROOM_POSTS: "classroom:posts:"
 }
 
 export const redisTTLs: any = {
     TOTP: 60 * 3,
     CLASSROOM: 60 * 60,
-    CLASSROOM_STUDENTS: 60 * 60 * 2
+    CLASSROOM_STUDENTS: 60 * 60 * 2,
+    CLASSROOM_POSTS: 60 * 15
 }
 
 export const otpCommonSetting: any = {
