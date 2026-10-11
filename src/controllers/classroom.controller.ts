@@ -91,7 +91,7 @@ export const getClassrooms = async (req: AuthenticatedRequest, res: Response) =>
             })
             .from(classrooms)
             .leftJoin(classroomStudents, eq(classrooms.id, classroomStudents.classroomId))
-            .where(eq(classrooms.teacherId, userId))
+            .where(eq(classrooms.teacherId, userId!))
             .groupBy(classrooms.id)
             .orderBy(desc(classrooms.createdAt));
 
