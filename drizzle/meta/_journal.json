@@ -71,6 +71,13 @@
       "when": 1789800000000,
       "tag": "0009_exam_attempts_phase2",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789900000000,
+      "tag": "0010_exam_duration_default",
+      "breakpoints": true
     }
   ]
 }

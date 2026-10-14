@@ -52,10 +52,14 @@ export const generateUniqueId = (id: number | string, name: string, maxLen: numb
 export const logger = (type: String, source: String, message: any) => {
     type = type.toLowerCase();
     if (type == "info") {
-        console.log(`[${type}]:: ${source}:: ${message}`)
+        console.log(`[${type}]:: ${source}::`, message);
     } else if (type == "error") {
-        console.error(`[${type}]:: ${source}:: ${message}`)
+        if (message instanceof Error) {
+            console.error(`[${type}]:: ${source}::`, message.message, (message as any).cause || "");
+        } else {
+            console.error(`[${type}]:: ${source}::`, message);
+        }
     } else {
-        console.warn(`[${type}]:: ${source}:: ${message}`)
+        console.warn(`[${type}]:: ${source}::`, message);
     }
 }

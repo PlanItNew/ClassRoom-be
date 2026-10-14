@@ -49,6 +49,7 @@ export const createExamDraft = async (req: AuthenticatedRequest, res: Response) 
             .values({
                 classroomId,
                 teacherId,
+                durationMinutes: 60,
                 status: "DRAFT",
                 generationVersion: 1,
             })
