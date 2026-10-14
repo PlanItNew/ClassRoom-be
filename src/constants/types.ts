@@ -18,4 +18,71 @@ export interface JwtPayload {
 export enum EmailTemplateType {
     SIGNUP_OTP = "signup-otp",
     SIGNIN_OTP = "signin-otp",
+    EXAM_REMINDER = "exam-reminder",
+    EXAM_FAILURE = "exam-failure",
+}
+
+export interface ExamGenerationJobData {
+    examId: string;
+    classroomId: string;
+    teacherId: string;
+    title: string;
+    difficulty: "EASY" | "MEDIUM" | "HARD";
+    questionCount: number;
+    teacherAiInstructions?: string;
+    s3Key: string;
+    generationVersion: number;
+}
+
+export type ExamParticipationStatus =
+    | "NOT_STARTED"
+    | "IN_PROGRESS"
+    | "SUBMITTED"
+    | "AUTO_SUBMITTED"
+    | "ENDED";
+
+export type SubmissionType = "MANUAL" | "AUTO_TIMEOUT";
+
+export interface AttemptAnswerItem {
+    questionId: string;
+    selectedOption?: string | undefined;
+    markedForReview: boolean;
+}
+
+export interface PublicQuestionItem {
+    id: string;
+    question: string;
+    options: Record<string, string>;
+    difficulty: "EASY" | "MEDIUM" | "HARD";
+    orderSequence: number;
+}
+
+export interface AnswerKeyItem {
+    questionId: string;
+    correctOption: string;
+    reason?: string | null | undefined;
+}
+
+export interface ExamSchedulerJobData {
+    type: "PREPARE_EXAM" | "ACTIVATE_EXAM" | "AUTO_SUBMIT_ATTEMPT" | "FINALIZE_EXAM";
+    examId: string;
+    classroomId?: string | undefined;
+    generationVersion?: number | undefined;
+    scheduledStart?: string | undefined;
+    attemptId?: string | undefined;
+    userId?: string | undefined;
+    expiresAt?: string | undefined;
+}
+
+export interface GeneratedQuestionItem {
+    question: string;
+    options: {
+        A: string;
+        B: string;
+        C: string;
+        D: string;
+    };
+    correctOption: "A" | "B" | "C" | "D";
+    reason: string;
+    difficulty: "EASY" | "MEDIUM" | "HARD";
 }

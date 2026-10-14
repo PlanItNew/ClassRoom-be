@@ -57,6 +57,20 @@
       "when": 1789696939818,
       "tag": "0007_classrooms_details_and_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789700000000,
+      "tag": "0008_exams_and_questions_refactor",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789800000000,
+      "tag": "0009_exam_attempts_phase2",
+      "breakpoints": true
     }
   ]
 }

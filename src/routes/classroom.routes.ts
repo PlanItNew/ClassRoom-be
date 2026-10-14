@@ -33,10 +33,17 @@ router.get("/notifications", authorized("STUDENT"), getStudentNotifications);
 router.patch("/notifications/read-all", authorized("STUDENT"), markAllNotificationsAsRead);
 router.patch("/notifications/:classroomId/read", authorized("STUDENT"), markNotificationAsRead);
 
+import { createExamDraft, getClassroomExams, deleteAllDraftExams } from "../controllers/exam.controller.js";
+
 // Parameterized classroom routes (placed after static routes)
 router.get("/:classroomId", getClassroomById);
 router.put("/:classroomId", authorized("TEACHER"), updateClassroom);
 router.get("/:classroomId/students", getStudentsInClassroom);
 router.get("/:classroomId/pending-requests", authorized("TEACHER"), getPendingRequests);
+
+// Exam routes for classroom
+router.post("/:classroomId/exams/draft", authorized("TEACHER"), createExamDraft);
+router.get("/:classroomId/exams", getClassroomExams);
+router.delete("/:classroomId/exams/drafts", authorized("TEACHER"), deleteAllDraftExams);
 
 export default router;

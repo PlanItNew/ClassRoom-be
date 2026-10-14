@@ -67,7 +67,8 @@ class BrevoService {
         emailType: EmailTemplateType,
         otp?: string,
         userAgent?: string,
-        ipAddress?: string
+        ipAddress?: string,
+        customParams?: Record<string, string | undefined>
     ) {
         try {
             if (!validateEmail(toEmail) || !toName || toName.trim() === "" || toEmail.trim() === "") {
@@ -86,12 +87,20 @@ class BrevoService {
                 request_time: currentTime,
                 device_info: userAgent || "unknown device",
                 ip_address: ipAddress || "unknown",
+                ...(customParams || {}),
             };
             const htmlContent = this.interpolateTemplate(rawHtml, params);
 
-            const subject = emailType === EmailTemplateType.SIGNUP_OTP
-                ? "Welcome to Edu Platform - Email Verification"
-                : "Edu Platform - Sign-in Verification Code";
+            let subject = "Edu Platform Notification";
+            if (emailType === EmailTemplateType.SIGNUP_OTP) {
+                subject = "Welcome to Edu Platform - Email Verification";
+            } else if (emailType === EmailTemplateType.SIGNIN_OTP) {
+                subject = "Edu Platform - Sign-in Verification Code";
+            } else if (emailType === EmailTemplateType.EXAM_REMINDER) {
+                subject = `Exam Starting Soon: ${customParams?.exam_title || "Upcoming Exam"}`;
+            } else if (emailType === EmailTemplateType.EXAM_FAILURE) {
+                subject = `Exam Notice: Delay or Technical Issue - ${customParams?.exam_title || "Scheduled Exam"}`;
+            }
 
             await this.brevoClient.transactionalEmails.sendTransacEmail({
                 htmlContent,

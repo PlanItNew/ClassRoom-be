@@ -111,9 +111,15 @@ export const closeAllDb = async () => {
     }
 };
 
+import {
+    startExamKeyspaceSubscriber,
+    closeExamKeyspaceSubscriber,
+} from "../redis/examKeyspace.subscriber.js";
+
 export const connectRedis = async () => {
     try {
         await startRedis();
+        await startExamKeyspaceSubscriber();
     } catch (error: any) {
         throw new Error(`Failed to connect to redis: ${error.message || error}`);
     }
@@ -121,6 +127,7 @@ export const connectRedis = async () => {
 
 export const closeRedisConnection = async () => {
     try {
+        await closeExamKeyspaceSubscriber();
         await closeRedis();
     } catch (error: any) {
         throw new Error(`Failed to close to redis: ${error.message || error}`);

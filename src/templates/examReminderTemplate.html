@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Starting Soon - Edu Platform</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+        style="background-color: #f1f5f9; padding: 40px 10px;">
+        <tr>
+            <td align="center">
+                <!-- Container -->
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+                    style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+
+                    <!-- Header Accent Banner (Indigo to Violet) -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%); height: 8px;">
+                        </td>
+                    </tr>
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 36px 40px 20px 40px; text-align: center;">
+                            <div
+                                style="display: inline-block; background-color: #eef2ff; border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; border: 1px solid #c7d2fe;">
+                                <span
+                                    style="font-size: 24px; font-weight: 800; color: #4338ca; letter-spacing: -0.5px;">⏰
+                                    Exam Alert</span>
+                            </div>
+                            <h1
+                                style="margin: 0; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;">
+                                Your Exam Starts in 5 Minutes!</h1>
+                            <p style="margin: 6px 0 0 0; font-size: 14px; color: #64748b;">Get ready to enter the examination room</p>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 0 40px 30px 40px;">
+                            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #475569;">
+                                Hello <strong>{{ params.name }}</strong>,
+                            </p>
+                            <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #475569;">
+                                The scheduled examination for <strong>{{ params.classroom_name }}</strong> is starting in 5 minutes.
+                            </p>
+
+                            <!-- Exam Details Card -->
+                            <div
+                                style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                                <table width="100%" cellpadding="6" cellspacing="0" style="font-size: 14px; color: #334155;">
+                                    <tr>
+                                        <td style="font-weight: 600; width: 40%; color: #64748b;">Exam Title:</td>
+                                        <td style="font-weight: 700; color: #0f172a;">{{ params.exam_title }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight: 600; color: #64748b;">Start Time:</td>
+                                        <td style="color: #0f172a;">{{ params.start_time }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight: 600; color: #64748b;">Duration:</td>
+                                        <td style="color: #0f172a;">{{ params.duration_minutes }} Minutes</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight: 600; color: #64748b;">Access Window:</td>
+                                        <td style="color: #0f172a;">Must begin within {{ params.access_window_minutes }} mins</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #64748b;">
+                                ⚠️ <em>Important reminder: Only one attempt is permitted. Please ensure you have a stable internet connection before beginning.</em>
+                            </p>
+
+                            <!-- CTA Button -->
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="{{ params.exam_link }}"
+                                    style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 700; font-size: 15px; letter-spacing: 0.2px; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);">
+                                    Go to Examination Hall →
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="padding: 24px 40px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+                            <p style="margin: 0; font-size: 12px; color: #94a3b8;">
+                                Edu Platform Exam Proctoring Engine &copy; All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
