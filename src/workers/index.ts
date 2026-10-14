@@ -1,8 +1,12 @@
 import { initEmailWorker, closeEmailWorker } from "./email.worker.js";
 import { initS3CleanupWorker, closeS3CleanupWorker } from "./s3Cleanup.worker.js";
+import { initExamGenerationWorker, closeExamGenerationWorker } from "./examGeneration.worker.js";
+import { initExamSchedulerWorker, closeExamSchedulerWorker } from "./examScheduler.worker.js";
 
 export * from "./email.worker.js";
 export * from "./s3Cleanup.worker.js";
+export * from "./examGeneration.worker.js";
+export * from "./examScheduler.worker.js";
 
 /**
  * Starts and initializes all BullMQ workers in the application.
@@ -13,6 +17,8 @@ export const startAllWorkers = async (): Promise<void> => {
         console.log("Starting BullMQ Workers...");
         initEmailWorker();
         initS3CleanupWorker();
+        initExamGenerationWorker();
+        initExamSchedulerWorker();
         console.log("✅ All workers started successfully");
     } catch (error: any) {
         console.error("Failed to start workers:", error.message || error);
@@ -29,6 +35,8 @@ export const closeAllWorkers = async (): Promise<void> => {
         await Promise.allSettled([
             closeEmailWorker(),
             closeS3CleanupWorker(),
+            closeExamGenerationWorker(),
+            closeExamSchedulerWorker(),
         ]);
         console.log("✅ All workers closed");
     } catch (error: any) {

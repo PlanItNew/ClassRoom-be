@@ -41,6 +41,22 @@ export const buildS3Key = (
 };
 
 /**
+ * Build a deterministic S3 key for an exam topic PDF.
+ * Format: classrooms/{classroomId}/exams/{examId}/{uuid}-{sanitisedFilename}
+ */
+export const buildExamS3Key = (
+    classroomId: string,
+    examId: string,
+    originalFilename: string
+): string => {
+    const id = crypto.randomUUID();
+    const sanitised = originalFilename
+        .replace(/[^a-zA-Z0-9._-]/g, "_")
+        .substring(0, 200);
+    return `classrooms/${classroomId}/exams/${examId}/${id}-${sanitised}`;
+};
+
+/**
  * Generate a presigned PUT URL so the frontend can upload directly to S3.
  */
 export const generatePresignedPutUrl = async (

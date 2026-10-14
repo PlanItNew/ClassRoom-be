@@ -16,6 +16,8 @@ export const ENV_TOKENS_REQUIED = [
 export const templateMap = {
     "signup-otp": path.resolve(process.cwd(), "src/templates/signupTemplate.html"),
     "signin-otp": path.resolve(process.cwd(), "src/templates/signinTemplate.html"),
+    "exam-reminder": path.resolve(process.cwd(), "src/templates/examReminderTemplate.html"),
+    "exam-failure": path.resolve(process.cwd(), "src/templates/examFailureTemplate.html"),
 }
 
 export const verificationTypes = {
@@ -28,6 +30,8 @@ export const verificationTypes = {
 export const bullMqQueues = {
     EMAIL: "email_brevo",
     S3_CLEANUP: "s3_cleanup",
+    EXAM_GENERATION: "exam_generation",
+    EXAM_SCHEDULER: "exam_scheduler",
 }
 
 
@@ -35,14 +39,18 @@ export const redisConstantKeys: any = {
     TOTP: "totp:",
     CLASSROOM: "classroom:",
     CLASSROOM_STUDENTS: "classroom:students:",
-    CLASSROOM_POSTS: "classroom:posts:"
+    CLASSROOM_POSTS: "classroom:posts:",
+    EXAM_QUESTIONS: "exam:questions:",
+    EXAM_LEADERBOARD: "exam:leaderboard:",
+    EXAM_SHADOW: "exam:shadow:",
 }
 
 export const redisTTLs: any = {
     TOTP: 60 * 3,
     CLASSROOM: 60 * 60,
     CLASSROOM_STUDENTS: 60 * 60 * 2,
-    CLASSROOM_POSTS: 60 * 15
+    CLASSROOM_POSTS: 60 * 15,
+    EXAM_GRACE_PERIOD_MINUTES: 15,
 }
 
 export const otpCommonSetting: any = {

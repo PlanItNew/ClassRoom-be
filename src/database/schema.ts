@@ -91,53 +91,66 @@ export const classroomStudents = pgTable(
     })
 );
 
-export const questionPapers = pgTable('question_papers', {
+export const examStatusEnum = pgEnum('exam_status', [
+    'DRAFT',
+    'GENERATING_QUESTIONS',
+    'READY',
+    'PREPARED',
+    'LIVE',
+    'DELAYED',
+    'PREPARATION_FAILED',
+    'COMPLETED',
+    'FAILED'
+]);
+export const examDifficultyEnum = pgEnum('exam_difficulty', ['EASY', 'MEDIUM', 'HARD']);
+
+export const exams = pgTable('exams', {
     id: uuid('id').defaultRandom().primaryKey(),
+    classroomId: uuid('classroom_id')
+        .notNull()
+        .references(() => classrooms.id, { onDelete: 'cascade' }),
     teacherId: uuid('teacher_id')
         .notNull()
         .references(() => users.id, { onDelete: 'cascade' }),
-    title: varchar('title', { length: 255 }).notNull(),
-    isPublished: boolean('is_published').default(false).notNull(),
+    title: varchar('title', { length: 255 }),
+    aiPrompt: text('ai_prompt'),
+    noOfQuestions: integer('no_of_questions').default(10).notNull(),
+    difficulty: examDifficultyEnum('difficulty').default('MEDIUM').notNull(),
+    scheduledStart: timestamp('scheduled_start', { withTimezone: true }),
+    durationMinutes: integer('duration_minutes').default(60).notNull(),
+    accessWindowMinutes: integer('access_window_minutes').default(30).notNull(),
+    pdfS3Key: text('pdf_s3_key'),
+    pdfOriginalFilename: text('pdf_original_filename'),
+    generationVersion: integer('generation_version').default(1).notNull(),
+    status: examStatusEnum('status').default('DRAFT').notNull(),
+    statusReason: text('status_reason'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 },
     (table) => ({
-        teacherIdx: index('idx_question_papers_teacher').on(table.teacherId),
+        classroomIdx: index('idx_exams_classroom').on(table.classroomId),
+        teacherIdx: index('idx_exams_teacher').on(table.teacherId),
+        statusIdx: index('idx_exams_status').on(table.status),
+        scheduledStartIdx: index('idx_exams_scheduled_start').on(table.scheduledStart),
     })
 );
 
 export const questions = pgTable('questions', {
     id: uuid('id').defaultRandom().primaryKey(),
-    questionPaperId: uuid('question_paper_id') // indexed to get all question of the paper.
+    examId: uuid('exam_id')
         .notNull()
-        .references(() => questionPapers.id, { onDelete: 'cascade' }),
-    questionText: text('question_text').notNull(),
+        .references(() => exams.id, { onDelete: 'cascade' }),
+    question: text('question').notNull(),
     options: jsonb('options').notNull(),
-    correctAnswer: varchar('correct_answer', { length: 255 }).notNull(),
+    correctOption: varchar('correct_option', { length: 255 }).notNull(),
     reason: text('reason'),
-    marksAwarded: decimal('marks_awarded', { precision: 5, scale: 2 }).default('1.00').notNull(),
+    difficulty: examDifficultyEnum('difficulty').default('MEDIUM').notNull(),
     orderSequence: integer('order_sequence').default(1).notNull(),
-},
-    (table) => ({
-        paperIdx: index('idx_questions_paper').on(table.questionPaperId)
-    })
-
-);
-
-export const exams = pgTable('exams', {
-    id: uuid('id').defaultRandom().primaryKey(),
-    classroomId: uuid('classroom_id') // indexed Reason :- student's dashboard can quickly load the list of all exams scheduled for their specific class
-        .notNull()
-        .references(() => classrooms.id, { onDelete: 'cascade' }),
-    questionPaperId: uuid('question_paper_id') // indexed 
-        .notNull()
-        .references(() => questionPapers.id, { onDelete: 'cascade' }),
-    title: varchar('title', { length: 255 }).notNull(),
-    scheduledStart: timestamp('scheduled_start', { withTimezone: true }).notNull(),
-    durationMinutes: integer('duration_minutes').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 },
     (table) => ({
-        classroomIdx: index('idx_exams_classroom').on(table.classroomId),
+        examIdx: index('idx_questions_exam').on(table.examId),
+        orderIdx: index('idx_questions_order').on(table.examId, table.orderSequence),
     })
 );
 

@@ -18,4 +18,7 @@ export const appKeys = {
     brevo_api_key: process.env.SEND_BREVO_API_KEY || "",
     brevo_sender_email: process.env.BREVO_SENDER_MAIL || "",
     brevo_sender_name: process.env.BREVO_SENDER_NAME || "",
+    // AI
+    groq_api_key: process.env.GROQ_API_KEY || "",
+    open_router_api_key: (process.env.OPEN_ROUTER_API_KEY || "").trim(),
 };

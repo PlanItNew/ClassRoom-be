@@ -10,7 +10,7 @@ export const initEmailWorker = (): Worker => {
         emailWorker = new Worker(
             bullMqQueues.EMAIL,
             async (job: Job) => {
-                const { to, fullName, otp, template, userAgent, ip } = job.data;
+                const { to, fullName, otp, template, userAgent, ip, customParams } = job.data;
                 console.log(`[EmailWorker] Processing job ${job.id} for: ${to} (template: ${template})`);
                 await brevoService.sendEmail(
                     to,
@@ -18,7 +18,8 @@ export const initEmailWorker = (): Worker => {
                     template,
                     otp,
                     userAgent,
-                    ip
+                    ip,
+                    customParams
                 );
             },
             {

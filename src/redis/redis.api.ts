@@ -1,5 +1,5 @@
 import { getRedis } from "../database/db.js";
-import { redisTTLs } from "../constants/constants.js";
+import { redisTTLs, redisConstantKeys } from "../constants/constants.js";
 import { makeRedisKey } from "../utils/common.utils.js";
 
 
@@ -72,4 +72,42 @@ export const bulkPutValue = async (data: any[], type: string, keyProperty: strin
         }
     }
     return true;
+};
+
+/**
+ * Caches exam questions in Redis for ultra-fast, resilient student access.
+ */
+export const cacheExamQuestions = async (examId: string, questionsData: any[]) => {
+    const key = `${redisConstantKeys.EXAM_QUESTIONS}${examId}`;
+    const serialized = JSON.stringify(questionsData);
+    return await getRedis().set(key, serialized);
+};
+
+export const getExamQuestionsFromCache = async (examId: string) => {
+    const key = `${redisConstantKeys.EXAM_QUESTIONS}${examId}`;
+    const val = await getRedis().get(key);
+    if (!val) return null;
+    try {
+        return JSON.parse(val);
+    } catch {
+        return null;
+    }
+};
+
+/**
+ * Initializes Redis leaderboard structure (Sorted Set) for the exam.
+ */
+export const initExamLeaderboard = async (examId: string) => {
+    const key = `${redisConstantKeys.EXAM_LEADERBOARD}${examId}`;
+    // Seed dummy score 0 with "__init__" marker to initialize the zset
+    return await getRedis().zadd(key, 0, "__init__");
+};
+
+/**
+ * Sets a shadow key with TTL for lifecycle & keyspace notifications.
+ * Actual exam and leaderboard keys remain unexpired until shadow key expires.
+ */
+export const setExamShadowKey = async (examId: string, ttlSeconds: number) => {
+    const key = `${redisConstantKeys.EXAM_SHADOW}${examId}`;
+    return await getRedis().set(key, "active", "EX", Math.max(60, ttlSeconds));
 };

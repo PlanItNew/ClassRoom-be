@@ -1,8 +1,10 @@
 import { initEmailQueue, closeEmailQueue } from "./email.queue.js";
 import { initS3CleanupQueue, closeS3CleanupQueue } from "./s3Cleanup.queue.js";
+import { initExamGenerationQueue, initExamSchedulerQueue, closeExamQueues } from "./exam.queue.js";
 
 export * from "./email.queue.js";
 export * from "./s3Cleanup.queue.js";
+export * from "./exam.queue.js";
 
 /**
  * Starts and initializes all BullMQ queues in the application.
@@ -13,6 +15,8 @@ export const startAllQueues = async (): Promise<void> => {
         console.log("Starting BullMQ Queues...");
         initEmailQueue();
         initS3CleanupQueue();
+        initExamGenerationQueue();
+        initExamSchedulerQueue();
         console.log("✅ All queues initialized successfully");
     } catch (error: any) {
         console.error("Failed to initialize queues:", error.message || error);
@@ -29,6 +33,7 @@ export const closeAllQueues = async (): Promise<void> => {
         await Promise.allSettled([
             closeEmailQueue(),
             closeS3CleanupQueue(),
+            closeExamQueues(),
         ]);
         console.log("✅ All queues closed");
     } catch (error: any) {
