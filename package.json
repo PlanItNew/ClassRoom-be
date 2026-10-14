@@ -15,8 +15,9 @@
   "type": "module",
   "main": "index.ts",
   "scripts": {
-    "test": "tsx --test tests/exam.test.ts",
+    "test": "tsx --test tests/exam.test.ts tests/examAttempt.test.ts",
     "test:exam": "tsx --test tests/exam.test.ts",
+    "test:attempt": "tsx --test tests/examAttempt.test.ts",
     "dev": "nodemon --watch . --ext ts --exec tsx index.ts",
     "db:generate": "drizzle-kit generate:pg",
     "db:migrate": "drizzle-kit migrate:pg",
@@ -27,6 +28,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1147.0",
     "@getbrevo/brevo": "^6.0.2",
     "@neondatabase/serverless": "^1.1.0",
+    "@socket.io/redis-adapter": "^8.3.0",
     "@syncfusion/ej2-pdf": "^35.1.39",
     "@syncfusion/ej2-pdf-data-extract": "^35.1.39",
     "bcrypt": "^6.0.0",
@@ -45,7 +47,8 @@
     "nodemon": "^3.1.14",
     "openai": "^7.32.0",
     "otplib": "^13.4.1",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "socket.io": "^4.8.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

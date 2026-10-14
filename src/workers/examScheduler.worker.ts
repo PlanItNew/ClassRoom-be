@@ -12,6 +12,12 @@ import {
     setExamShadowKey,
 } from "../redis/redis.api.js";
 import { appConfig } from "../config/app.config.js";
+import { ExamAttemptRedisRepository } from "../redis/examAttempt.redis.js";
+import { ExamSubmissionService } from "../services/examSubmission.service.js";
+import { calculateExamTiming } from "../utils/examTiming.utils.js";
+import { getExamSchedulerQueue } from "../queues/exam.queue.js";
+import { getIO } from "../websocket/exam.gateway.js";
+import { socketEvents } from "../constants/constants.js";
 
 export let examSchedulerWorker: Worker | null = null;
 
@@ -119,8 +125,9 @@ export const initExamSchedulerWorker = (): Worker => {
                         return;
                     }
 
-                    // A. Cache questions in Redis
+                    // A. Cache questions in Redis & Separate public questions from private answer key
                     await cacheExamQuestions(examId, examQuestions);
+                    await ExamAttemptRedisRepository.cachePublicQuestionsAndAnswerKey(examId, examQuestions);
 
                     // B. Initialize Redis Leaderboard
                     await initExamLeaderboard(examId);
@@ -224,7 +231,7 @@ export const initExamSchedulerWorker = (): Worker => {
                 // 2. ACTIVATE_EXAM (Triggers at scheduledStart)
                 // ─────────────────────────────────────────────────────────────
                 else if (type === "ACTIVATE_EXAM") {
-                    if (exam.status === "PREPARED") {
+                    if (exam.status === "PREPARED" || exam.status === "READY") {
                         await db
                             .update(exams)
                             .set({
@@ -234,10 +241,123 @@ export const initExamSchedulerWorker = (): Worker => {
                             .where(eq(exams.id, examId));
 
                         console.log(`[ExamSchedulerWorker] Exam ${examId} marked LIVE! Students can now attempt.`);
+
+                        // Schedule global FINALIZE_EXAM safety net reconciliation for hardEndAt
+                        try {
+                            const timing = calculateExamTiming({
+                                scheduledStart: exam.scheduledStart,
+                                accessWindowMinutes: exam.accessWindowMinutes,
+                                durationMinutes: exam.durationMinutes,
+                            });
+
+                            const finalizeDelay = Math.max(0, timing.hardEndAt.getTime() - Date.now());
+                            const finalizeJobId = `finalize-exam:${exam.id}:${generationVersion || 1}`;
+                            const schedulerQueue = getExamSchedulerQueue();
+
+                            await schedulerQueue.add(
+                                "finalize-exam",
+                                {
+                                    type: "FINALIZE_EXAM",
+                                    examId: exam.id,
+                                    classroomId: exam.classroomId,
+                                    generationVersion: generationVersion || 1,
+                                    scheduledStart: exam.scheduledStart
+                                        ? new Date(exam.scheduledStart).toISOString()
+                                        : new Date().toISOString(),
+                                },
+                                {
+                                    jobId: finalizeJobId,
+                                    delay: finalizeDelay,
+                                }
+                            );
+                            console.log(
+                                `[ExamSchedulerWorker] Scheduled FINALIZE_EXAM for hardEndAt with delay ${finalizeDelay}ms`
+                            );
+                        } catch (finalizeErr: any) {
+                            console.error(
+                                `[ExamSchedulerWorker] Failed to schedule FINALIZE_EXAM:`,
+                                finalizeErr.message
+                            );
+                        }
                     } else {
                         console.log(
                             `[ExamSchedulerWorker] ACTIVATE_EXAM skipped because status is ${exam.status} (expected PREPARED).`
                         );
+                    }
+                }
+
+                // ─────────────────────────────────────────────────────────────
+                // 3. AUTO_SUBMIT_ATTEMPT (Durable BullMQ per-attempt timeout)
+                // ─────────────────────────────────────────────────────────────
+                else if (type === "AUTO_SUBMIT_ATTEMPT") {
+                    const { userId, attemptId } = job.data;
+                    if (userId) {
+                        console.log(
+                            `[ExamSchedulerWorker] Executing durable AUTO_SUBMIT_ATTEMPT for user ${userId} on exam ${examId}`
+                        );
+
+                        await ExamSubmissionService.finalizeAttempt({
+                            examId,
+                            userId,
+                            reason: "AUTO_TIMEOUT",
+                            ...(attemptId ? { attemptId } : {}),
+                        });
+
+                        try {
+                            const io = getIO();
+                            const userRoom = `exam:${examId}:user:${userId}`;
+                            io.to(userRoom).emit(socketEvents.ATTEMPT_EXPIRED, {
+                                message: "Exam duration has ended. Attempt automatically submitted by scheduler.",
+                            });
+                            io.in(userRoom).disconnectSockets(true);
+                        } catch {
+                            // Socket server might not be running in isolated worker process
+                        }
+                    }
+                }
+
+                // ─────────────────────────────────────────────────────────────
+                // 4. FINALIZE_EXAM (Global exam safety net reconciliation)
+                // ─────────────────────────────────────────────────────────────
+                else if (type === "FINALIZE_EXAM") {
+                    console.log(
+                        `[ExamSchedulerWorker] Executing global FINALIZE_EXAM reconciliation for exam ${examId}`
+                    );
+
+                    // 1. Mark exam status as COMPLETED
+                    await db
+                        .update(exams)
+                        .set({
+                            status: "COMPLETED",
+                            updatedAt: new Date(),
+                        })
+                        .where(eq(exams.id, examId));
+
+                    // 2. Reconcile remaining active attempts
+                    const activeUserIds = await ExamAttemptRedisRepository.getActiveAttempts(examId);
+                    console.log(
+                        `[ExamSchedulerWorker] Found ${activeUserIds.length} remaining active attempts to finalize.`
+                    );
+
+                    for (const uid of activeUserIds) {
+                        await ExamSubmissionService.finalizeAttempt({
+                            examId,
+                            userId: uid,
+                            reason: "AUTO_TIMEOUT",
+                        });
+                    }
+
+                    // 3. Emit exam:ended and disconnect all sockets in exam room
+                    try {
+                        const io = getIO();
+                        const examRoom = `exam:${examId}`;
+                        io.to(examRoom).emit(socketEvents.EXAM_ENDED, {
+                            message: "The examination window has officially closed.",
+                            examId,
+                        });
+                        io.in(examRoom).disconnectSockets(true);
+                    } catch {
+                        // Socket server not available in worker context
                     }
                 }
             },

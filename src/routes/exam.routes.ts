@@ -5,9 +5,13 @@ import {
     publishExam,
     getExamDetails,
     deleteExam,
+} from "../controllers/exam.controller.js";
+import {
+    getExamParticipationStatus,
+    startExamAttempt,
     submitExamAttempt,
     getExamResults,
-} from "../controllers/exam.controller.js";
+} from "../controllers/examAttempt.controller.js";
 import { authenticateToken, authorized } from "../middlewares/auth.middleware.js";
 
 const router = Router();
@@ -20,9 +24,11 @@ router.post("/:examId/verify-file", authorized("TEACHER"), verifyExamPdf);
 router.post("/:examId/publish", authorized("TEACHER"), publishExam);
 router.delete("/:examId", authorized("TEACHER"), deleteExam);
 
-// General exam details & phase 2 endpoints
-router.get("/:examId", getExamDetails);
-router.post("/:examId/submit", submitExamAttempt);
+// Phase 2: Live attempt, participation, and result endpoints
+router.get("/:examId/participation-status", getExamParticipationStatus);
+router.post("/:examId/start", authorized("STUDENT"), startExamAttempt);
+router.post("/:examId/submit", authorized("STUDENT"), submitExamAttempt);
 router.get("/:examId/results", getExamResults);
+router.get("/:examId", getExamDetails);
 
 export default router;

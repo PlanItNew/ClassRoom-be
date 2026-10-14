@@ -16,7 +16,11 @@ import {
 } from "./src/utils/startup.utils.js";
 import cors from "cors";
 
+import http from "http";
+import { initExamSocketGateway } from "./src/websocket/exam.gateway.js";
+
 const app = express();
+const httpServer = http.createServer(app);
 
 app.use(cors({
     origin: applicationConfig.app.clientUrl || "http://localhost:5001",
@@ -47,12 +51,16 @@ async function applicationStartUp() {
         await startAllQueues();
         await startAllWorkers();
 
+        // Initialize Socket.IO gateway
+        await initExamSocketGateway(httpServer);
+        console.log("Initialized Exam Socket.IO Gateway");
+
         await new Promise<void>((resolve, reject) => {
-            const server = app.listen(applicationConfig.app.port, () => {
+            httpServer.listen(applicationConfig.app.port, () => {
                 console.log(`Server started on port ${applicationConfig.app.port} at ${new Date().toLocaleString()}`);
                 resolve();
             });
-            server.on("error", (err) => {
+            httpServer.on("error", (err) => {
                 reject(err);
             });
         });

@@ -166,8 +166,15 @@ export const examAttempts = pgTable(
             .references(() => users.id, { onDelete: 'cascade' }),
         status: attemptStatusEnum('status').default('IN_PROGRESS').notNull(),
         startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
+        expiresAt: timestamp('expires_at', { withTimezone: true }),
         completedAt: timestamp('completed_at', { withTimezone: true }),
+        submittedAt: timestamp('submitted_at', { withTimezone: true }),
         totalScore: decimal('total_score', { precision: 5, scale: 2 }),
+        submissionType: varchar('submission_type', { length: 50 }),
+        answers: jsonb('answers'),
+        questionOrder: jsonb('question_order'),
+        createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
     },
     (table) => ({
         // Constraint: A student can only have one attempt per exam

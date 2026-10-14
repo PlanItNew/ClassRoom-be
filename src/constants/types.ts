@@ -34,12 +34,44 @@ export interface ExamGenerationJobData {
     generationVersion: number;
 }
 
+export type ExamParticipationStatus =
+    | "NOT_STARTED"
+    | "IN_PROGRESS"
+    | "SUBMITTED"
+    | "AUTO_SUBMITTED"
+    | "ENDED";
+
+export type SubmissionType = "MANUAL" | "AUTO_TIMEOUT";
+
+export interface AttemptAnswerItem {
+    questionId: string;
+    selectedOption?: string | undefined;
+    markedForReview: boolean;
+}
+
+export interface PublicQuestionItem {
+    id: string;
+    question: string;
+    options: Record<string, string>;
+    difficulty: "EASY" | "MEDIUM" | "HARD";
+    orderSequence: number;
+}
+
+export interface AnswerKeyItem {
+    questionId: string;
+    correctOption: string;
+    reason?: string | null | undefined;
+}
+
 export interface ExamSchedulerJobData {
-    type: "PREPARE_EXAM" | "ACTIVATE_EXAM";
+    type: "PREPARE_EXAM" | "ACTIVATE_EXAM" | "AUTO_SUBMIT_ATTEMPT" | "FINALIZE_EXAM";
     examId: string;
-    classroomId: string;
-    generationVersion: number;
-    scheduledStart: string;
+    classroomId?: string | undefined;
+    generationVersion?: number | undefined;
+    scheduledStart?: string | undefined;
+    attemptId?: string | undefined;
+    userId?: string | undefined;
+    expiresAt?: string | undefined;
 }
 
 export interface GeneratedQuestionItem {
