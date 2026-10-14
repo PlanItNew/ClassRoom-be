@@ -88,7 +88,7 @@ export const verifyAndSetupEnv = () => {
     const redis_port = process.env.REDIS_PORT;
     const redis_password = process.env.REDIS_PASSWORD;
 
-    if (!redis_host || !redis_port || (process.env.NODE_ENV === "production" && !redis_password)) {
+    if (!redis_host || !redis_port) {
         throw new Error("Missing redis configuration");
     }
 
