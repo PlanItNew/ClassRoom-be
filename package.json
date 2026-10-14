@@ -20,7 +20,7 @@
     "test:attempt": "tsx --test tests/examAttempt.test.ts",
     "dev": "nodemon --watch . --ext ts --exec tsx index.ts",
     "build": "tsc",
-    "start": "npm dist/index.js",
+    "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate:pg",
     "db:migrate": "drizzle-kit migrate:pg",
     "db:studio": "drizzle-kit studio"
@@ -33,6 +33,13 @@
     "@socket.io/redis-adapter": "^8.3.0",
     "@syncfusion/ej2-pdf": "^35.1.39",
     "@syncfusion/ej2-pdf-data-extract": "^35.1.39",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.1.1",
+    "@types/pg": "^8.20.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^6.1.2",
     "cookie-parser": "^1.4.7",
@@ -50,19 +57,12 @@
     "openai": "^7.32.0",
     "otplib": "^13.4.1",
     "pg": "^8.22.0",
-    "socket.io": "^4.8.4"
+    "socket.io": "^4.8.4",
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
-    "@types/cookie-parser": "^1.4.10",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^26.1.1",
-    "@types/pg": "^8.20.0",
     "drizzle-kit": "^0.18.1",
     "ts-node": "^10.9.2",
-    "tsx": "^4.23.1",
-    "typescript": "^6.0.3"
+    "tsx": "^4.23.1"
   }
 }
