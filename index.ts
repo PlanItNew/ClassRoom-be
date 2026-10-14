@@ -22,10 +22,7 @@ import { initExamSocketGateway } from "./src/websocket/exam.gateway.js";
 const app = express();
 const httpServer = http.createServer(app);
 
-app.use(cors({
-    origin: applicationConfig.app.clientUrl || "http://localhost:5001",
-    credentials: true,
-}));
+app.use(cors({ origin: true, credentials: true }));
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
