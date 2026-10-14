@@ -5,6 +5,7 @@ import {
     publishExam,
     getExamDetails,
     deleteExam,
+    seedExamQuestions,
 } from "../controllers/exam.controller.js";
 import {
     getExamParticipationStatus,
@@ -22,6 +23,7 @@ router.use(authenticateToken);
 router.post("/:examId/upload-url", authorized("TEACHER"), getExamUploadUrl);
 router.post("/:examId/verify-file", authorized("TEACHER"), verifyExamPdf);
 router.post("/:examId/publish", authorized("TEACHER"), publishExam);
+router.post("/:examId/questions", authorized("TEACHER"), seedExamQuestions);
 router.delete("/:examId", authorized("TEACHER"), deleteExam);
 
 // Phase 2: Live attempt, participation, and result endpoints

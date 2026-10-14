@@ -36,6 +36,10 @@ app.get("/", (req, res) => {
     res.json({ message: "edu-ex Backend API is running successfully" });
 });
 
+app.get('/health', (req, res) => {
+    res.status(200).send({ "message": "backend is healthy" })
+})
+
 app.use(errorHandler);
 
 async function applicationStartUp() {

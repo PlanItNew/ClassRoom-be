@@ -13,6 +13,7 @@ import {
     getExamGenerationQueue,
     getExamSchedulerQueue,
 } from "../queues/exam.queue.js";
+import { ExamAttemptRedisRepository } from "../redis/examAttempt.redis.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. CREATE EXAM DRAFT
@@ -485,6 +486,120 @@ export const deleteExam = async (req: AuthenticatedRequest, res: Response) => {
     } catch (error: any) {
         logger("error", "deleteExam", error);
         return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const seedExamQuestions = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const db = getPostgresDb();
+        const examId = req.params.examId as string;
+        const teacherId = req.user!.id;
+
+        if (!examId) {
+            return res.status(400).json({ message: "Exam ID is required" });
+        }
+
+        const [exam] = await db
+            .select()
+            .from(exams)
+            .where(eq(exams.id, examId))
+            .limit(1);
+
+        if (!exam) {
+            return res.status(404).json({ message: "Exam not found" });
+        }
+
+        if (exam.teacherId !== teacherId) {
+            return res.status(403).json({ message: "Only the exam creator can add questions" });
+        }
+
+        const {
+            title,
+            difficulty = "MEDIUM",
+            status = "LIVE",
+            scheduledStart,
+            durationMinutes = 60,
+            accessWindowMinutes = 525600, // 1 year by default for demo exams so they never expire
+            questions: inputQuestions = []
+        } = req.body;
+
+        if (!Array.isArray(inputQuestions) || inputQuestions.length === 0) {
+            return res.status(400).json({ message: "questions array is required and cannot be empty" });
+        }
+
+        const diff: "EASY" | "MEDIUM" | "HARD" = ["EASY", "MEDIUM", "HARD"].includes(difficulty)
+            ? difficulty
+            : "MEDIUM";
+
+        const parsedStart = scheduledStart ? new Date(scheduledStart) : new Date(Date.now() - 10 * 60 * 1000); // 10 minutes ago
+        const examStatus = ["DRAFT", "READY", "LIVE", "COMPLETED"].includes(status) ? status : "LIVE";
+
+        const insertedQuestions = await db.transaction(async (tx: any) => {
+            // Remove previous questions if any
+            await tx.delete(questions).where(eq(questions.examId, examId));
+
+            const rowsToInsert = inputQuestions.map((q: any, idx: number) => {
+                let opts = q.options;
+                if (Array.isArray(opts)) {
+                    opts = {
+                        A: opts[0] || "",
+                        B: opts[1] || "",
+                        C: opts[2] || "",
+                        D: opts[3] || ""
+                    };
+                }
+                return {
+                    examId,
+                    question: q.question,
+                    options: opts,
+                    correctOption: String(q.correctOption || "A").toUpperCase(),
+                    reason: q.reason || "Standard answer rationale.",
+                    difficulty: q.difficulty || diff,
+                    orderSequence: idx + 1,
+                };
+            });
+
+            const inserted = await tx.insert(questions).values(rowsToInsert).returning();
+
+            await tx
+                .update(exams)
+                .set({
+                    title: title || exam.title || "Exam Assessment",
+                    noOfQuestions: inserted.length,
+                    difficulty: diff,
+                    scheduledStart: parsedStart,
+                    durationMinutes: Number(durationMinutes) || 60,
+                    accessWindowMinutes: Number(accessWindowMinutes) || 525600,
+                    status: examStatus,
+                    statusReason: null,
+                    updatedAt: new Date(),
+                })
+                .where(eq(exams.id, examId));
+
+            return inserted;
+        });
+
+        // Cache questions in Redis if available
+        try {
+            await ExamAttemptRedisRepository.cachePublicQuestionsAndAnswerKey(
+                examId,
+                insertedQuestions
+            );
+        } catch (cacheErr) {
+            // non-fatal
+        }
+
+        return res.status(200).json({
+            message: `Successfully seeded ${insertedQuestions.length} questions and set status to ${examStatus}`,
+            data: {
+                examId,
+                questionCount: insertedQuestions.length,
+                status: examStatus,
+            }
+        });
+    } catch (error: any) {
+        logger("error", "seedExamQuestions", error);
+        return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
 
