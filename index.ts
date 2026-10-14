@@ -30,7 +30,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
 
-app.use("/api", routes);
+app.use(routes);
 
 app.get("/", (req, res) => {
     res.json({ message: "edu-ex Backend API is running successfully" });
