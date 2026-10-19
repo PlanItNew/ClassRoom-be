@@ -1,0 +1,11 @@
+{
+    "meesage": "To bypass the otp verification",
+    "student": {
+        "email": "student_demo@classroom.com",
+        "passowrd": "Password123!"
+    },
+    "teacher": {
+        "email": "teacher_demo@classroom.com",
+        "passowrd": "Password123!"
+    }
+}
